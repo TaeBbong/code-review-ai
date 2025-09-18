@@ -8,7 +8,7 @@ void main(List<String> arguments) async {
     ..addOption('model',
         abbr: 'm',
         help: 'Ollama model name',
-        defaultsTo: Platform.environment['OLLAMA_MODEL'] ?? 'llama3.1:8b')
+        defaultsTo: Platform.environment['OLLAMA_MODEL'] ?? 'qwen2.5-coder:7b')
     ..addOption('host',
         help: 'Ollama host',
         defaultsTo: Platform.environment['OLLAMA_HOST'] ?? '127.0.0.1')
