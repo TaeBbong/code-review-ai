@@ -1,0 +1,16 @@
+name: code_review_bot
+description: CLI that reviews staged changes with a local Ollama model and prints GitHub-style feedback. Includes a pre-commit hook installer.
+version: 0.1.0
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  http: ^1.2.2
+  args: ^2.5.0
+
+dev_dependencies:
+  lints: ^3.0.0
+
+executables:
+  code_review_bot: code_review_bot
+
