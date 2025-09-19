@@ -32,6 +32,12 @@ void main(List<String> arguments) async {
 
   final commands = <String>{'review', 'pre-commit', 'install-hook'};
 
+  // Executes --help option when no arguments are provided.
+  if (arguments.isEmpty) {
+    _printUsage(parser, commands);
+    return;
+  }
+
   ArgResults args;
   try {
     args = parser.parse(arguments);
