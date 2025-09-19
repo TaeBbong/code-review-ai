@@ -121,7 +121,7 @@ class Reviewer {
         reviewMarkdown: reviewMarkdown, maxSeverity: maxSeverity);
   }
 
-  static Future<void> installHook() async {
+  static Future<void> installHook({String? failOn}) async {
     final repoRoot = Directory.current;
     final gitDir = Directory('${repoRoot.path}${Platform.pathSeparator}.git');
     if (!await gitDir.exists()) {
@@ -137,7 +137,17 @@ class Reviewer {
     final hookFile =
         File('${hooksDir.path}${Platform.pathSeparator}pre-commit');
 
-    await hookFile.writeAsString(preCommitHookScript);
+    var command = 'code_review_bot pre-commit';
+    if (failOn != null) {
+      command += ' --fail-on $failOn';
+    }
+
+    final script = preCommitHookScript.replaceFirst(
+      'code_review_bot pre-commit',
+      command,
+    );
+
+    await hookFile.writeAsString(script);
     // Try to make it executable on Unix.
     if (!Platform.isWindows) {
       try {

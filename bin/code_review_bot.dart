@@ -73,7 +73,7 @@ void main(List<String> arguments) async {
 
   switch (command) {
     case 'install-hook':
-      await Reviewer.installHook();
+      await Reviewer.installHook(failOn: failOn);
       return;
     case 'review':
     case 'pre-commit':
