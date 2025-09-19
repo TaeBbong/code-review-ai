@@ -13,6 +13,7 @@
 ### Key Components & Logic
 
 - **`main(List<String> arguments)` function**:
+  - **No Arguments**: If the program is executed without any arguments, it prints the usage information and exits.
   - **Argument Parsing**: `args` 패키지를 사용하여 커맨드 라인 옵션을 정의하고 파싱합니다.
     - `--model`, `--host`, `--port`: Ollama 모델 및 서버 연결 정보.
     - `--system-prompt`: 리뷰어의 페르소나를 정의하는 시스템 프롬프트.
@@ -27,4 +28,4 @@
       3. 리뷰 결과를 `stdout`으로 출력합니다.
       4. 리뷰의 심각도가 설정된 기준(`failOnSeverity`)을 초과하면, `exitCode`를 `1`로 설정하여 커밋을 실패 처리합니다.
 - **`_printUsage(ArgParser parser, Set<String> commands)` function**:
-  - 잘못된 인자나 `--help` 플래그가 사용되었을 때, 애플리케이션의 사용법과 사용 가능한 옵션/커맨드를 출력합니다.
+  - 잘못된 인자, `--help` 플래그가 사용되었을 때, 또는 프로그램이 인자 없이 실행되었을 때, 애플리케이션의 사용법과 사용 가능한 옵션/커맨드를 출력합니다.

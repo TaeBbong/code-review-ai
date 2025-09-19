@@ -45,12 +45,33 @@ code_review_bot pre-commit --fail-on high    # default in pre-commit
 code_review_bot review --host 127.0.0.1 --port 11434
 ```
 
+For larger diffs, the tool clips to `--max-chars` (default 60000). Commit in smaller chunks for better quality.
+
 ### System prompt (reviewer persona)
 By default, the bot uses a system prompt to prime the model as a senior reviewer. You can override it:
 ```
 code_review_bot review --system-prompt "You are an expert software developer who reviews many juniors' code..."
 ```
-You may also set `OLLAMA_SYSTEM_PROMPT` in your environment.
+
+## Configuration
+You can configure the bot using command-line arguments or environment variables. The bot also supports a `.env` file in the project root directory.
+
+**Environment Variables:**
+
+*   `OLLAMA_MODEL`: The Ollama model to use (e.g., `qwen2.5-coder:7b`).
+*   `OLLAMA_HOST`: The Ollama host (e.g., `127.0.0.1`).
+*   `OLLAMA_PORT`: The Ollama port (e.g., `11434`).
+*   `OLLAMA_SYSTEM_PROMPT`: The system prompt to set the reviewer's persona.
+
+**.env file:**
+
+You can create a `.env` file in the root of the project to store your environment variables. For example:
+```
+OLLAMA_MODEL=qwen2.5-coder:7b
+OLLAMA_HOST=127.0.0.1
+OLLAMA_PORT=11434
+OLLAMA_SYSTEM_PROMPT=You are an expert senior software engineer...
+```
 
 ## Install Git pre-commit hook
 Inside the target Git repository:
@@ -78,11 +99,6 @@ The bot asks the model to:
 }
 ```
 If JSON is missing, the tool treats severity as `low`.
-
-## Tips
-- For larger diffs, the tool clips to `--max-chars` (default 60000). Commit in smaller chunks for better quality.
-- Try focused code models, e.g. `qwen2.5-coder:7b` or `llama3.1:8b`.
-- You can export `OLLAMA_MODEL`, `OLLAMA_HOST`, `OLLAMA_PORT` to change defaults.
 
 ## Troubleshooting
 - "Failed to connect to Ollama": ensure `ollama serve` is running on the configured host/port.
