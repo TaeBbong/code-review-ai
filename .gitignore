@@ -20,4 +20,4 @@ Thumbs.db
 .env
 
 # binary
-bin/code_review_bot.exe
+bin/review-bot.exe

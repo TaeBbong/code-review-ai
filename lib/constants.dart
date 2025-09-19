@@ -1,6 +1,7 @@
 const List<String> severityOrder = ['low', 'medium', 'high', 'block'];
 
-const String reviewPromptTemplate = '''Review the following STAGED git diff and produce:
+const String reviewPromptTemplate =
+    '''Review the following STAGED git diff and produce:
 
 1) A concise, GitHub-like review in Markdown:
    - High-level summary
@@ -30,7 +31,7 @@ Here is the git diff:
 
 const String preCommitHookScript = r'''#!/usr/bin/env sh
 echo "Running code review bot (pre-commit)..."
-code_review_bot pre-commit
+review-bot pre-commit
 STATUS=$?
 if [ $STATUS -ne 0 ]; then
   echo "Pre-commit blocked by code review bot."
@@ -39,13 +40,16 @@ fi
 exit 0
 ''';
 
-final RegExp jsonBlockRegExp = RegExp(r"```json\s*([\s\S]*?)\s*```", multiLine: true);
+final RegExp jsonBlockRegExp =
+    RegExp(r"```json\s*([\s\S]*?)\s*```", multiLine: true);
 
-const String noStagedChangesMessage = 'No staged changes found. Stage files before committing.';
+const String noStagedChangesMessage =
+    'No staged changes found. Stage files before committing.';
 
 const String defaultSeverity = 'low';
 
 const String reviewHeader = '=== Code Review (model: {model}) ===';
-const String reviewSubHeader = 'Staged diff analyzed. Threshold: {failOnSeverity}{strict}';
+const String reviewSubHeader =
+    'Staged diff analyzed. Threshold: {failOnSeverity}{strict}';
 const String maxSeverityDetected = 'Max severity detected: {maxSeverity}';
 const String lineSeparator = '-----------------------------------';

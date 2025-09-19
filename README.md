@@ -19,7 +19,7 @@ A lightweight CLI that reviews your staged changes using a local [Ollama](https:
 ```
 # From this project root
 dart pub get
-# Activate globally so the `code_review_bot` binary is in PATH
+# Activate globally so the `review-bot` binary is in PATH
 dart pub global activate -s path .
 ```
 Make sure your Dart pub bin is on PATH:
@@ -29,20 +29,20 @@ Make sure your Dart pub bin is on PATH:
 ## Usage
 ```
 # Review staged changes (does not block)
-code_review_bot review
+review-bot review
 
 # Use a specific model
-code_review_bot review --model llama3.1:8b
+review-bot review --model llama3.1:8b
 
 # Pre-commit mode (defaults to fail on high)
-code_review_bot pre-commit
+review-bot pre-commit
 
 # Adjust threshold
-code_review_bot pre-commit --fail-on block   # only block on block
-code_review_bot pre-commit --fail-on high    # default in pre-commit
+review-bot pre-commit --fail-on block   # only block on block
+review-bot pre-commit --fail-on high    # default in pre-commit
 
 # Change Ollama host/port
-code_review_bot review --host 127.0.0.1 --port 11434
+review-bot review --host 127.0.0.1 --port 11434
 ```
 
 For larger diffs, the tool clips to `--max-chars` (default 60000). Commit in smaller chunks for better quality.
@@ -50,7 +50,7 @@ For larger diffs, the tool clips to `--max-chars` (default 60000). Commit in sma
 ### System prompt (reviewer persona)
 By default, the bot uses a system prompt to prime the model as a senior reviewer. You can override it:
 ```
-code_review_bot review --system-prompt "You are an expert software developer who reviews many juniors' code..."
+review-bot review --system-prompt "You are an expert software developer who reviews many juniors' code..."
 ```
 
 ## Configuration
@@ -76,9 +76,9 @@ OLLAMA_SYSTEM_PROMPT=You are an expert senior software engineer...
 ## Install Git pre-commit hook
 Inside the target Git repository:
 ```
-code_review_bot install-hook
+review-bot install-hook
 ```
-This writes `.git/hooks/pre-commit` that runs `code_review_bot pre-commit`. Make sure the `code_review_bot` executable is on PATH (via `dart pub global activate`).
+This writes `.git/hooks/pre-commit` that runs `review-bot pre-commit`. Make sure the `review-bot` executable is on PATH (via `dart pub global activate`).
 
 ## How it works
 - Reads staged diff: `git diff --cached --unified=3`
@@ -103,7 +103,7 @@ If JSON is missing, the tool treats severity as `low`.
 ## Troubleshooting
 - "Failed to connect to Ollama": ensure `ollama serve` is running on the configured host/port.
 - No review printed: make sure you have staged changes (`git add <files>`).
-- Hook does nothing: confirm `code_review_bot` is on PATH and the hook file is executable (non-Windows).
+- Hook does nothing: confirm `review-bot` is on PATH and the hook file is executable (non-Windows).
 
 ## License
 MIT-like usage permitted in your environment; add your own license if publishing.

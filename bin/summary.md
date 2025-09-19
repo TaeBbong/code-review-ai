@@ -4,7 +4,7 @@
 
 ---
 
-## File: `code_review_bot.dart`
+## File: `review-bot.dart`
 
 ### Purpose
 

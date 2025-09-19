@@ -99,7 +99,7 @@ void main(List<String> arguments) async {
 
 void _printUsage(ArgParser parser, Set<String> commands) {
   stdout.writeln('Code Review Bot (Dart + Ollama)');
-  stdout.writeln('Usage: code_review_bot [options] [command]');
+  stdout.writeln('Usage: review-bot [options] [command]');
   stdout.writeln('Commands: ${commands.join(', ')}');
   stdout.writeln(parser.usage);
 }

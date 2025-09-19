@@ -107,9 +107,10 @@ class Reviewer {
       final jsonText = jsonBlock.group(1);
       try {
         final data = json.decode(jsonText!) as Map<String, dynamic>;
-        maxSeverity = (data['max_severity'] ?? data['severity'] ?? defaultSeverity)
-            .toString()
-            .toLowerCase();
+        maxSeverity =
+            (data['max_severity'] ?? data['severity'] ?? defaultSeverity)
+                .toString()
+                .toLowerCase();
       } catch (_) {
         // ignore parse errors
       }
@@ -137,13 +138,13 @@ class Reviewer {
     final hookFile =
         File('${hooksDir.path}${Platform.pathSeparator}pre-commit');
 
-    var command = 'code_review_bot pre-commit';
+    var command = 'review-bot pre-commit';
     if (failOn != null) {
       command += ' --fail-on $failOn';
     }
 
     final script = preCommitHookScript.replaceFirst(
-      'code_review_bot pre-commit',
+      'review-bot pre-commit',
       command,
     );
 
@@ -156,7 +157,7 @@ class Reviewer {
     }
     stdout.writeln('Installed pre-commit hook at ${hookFile.path}.');
     stdout.writeln(
-        'Ensure the executable "code_review_bot" is in PATH (dart pub global activate).');
+        'Ensure the executable "review-bot" is in PATH (dart pub global activate).');
   }
 }
 
