@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:code_review_bot/git.dart';
 import 'package:code_review_bot/ollama_client.dart';
+import 'package:code_review_bot/constants.dart';
 
 class ReviewResult {
   final String renderedOutput;
@@ -34,10 +35,8 @@ class Reviewer {
     required this.systemPrompt,
   });
 
-  static const _severityOrder = ['low', 'medium', 'high', 'block'];
-
   static int _severityRank(String s) {
-    final idx = _severityOrder.indexOf(s.toLowerCase());
+    final idx = severityOrder.indexOf(s.toLowerCase());
     return idx < 0 ? 0 : idx;
   }
 
@@ -45,9 +44,8 @@ class Reviewer {
     final diff = await Git.getStagedDiff();
     if (diff.trim().isEmpty) {
       return ReviewResult(
-        renderedOutput:
-            'No staged changes found. Stage files before committing.',
-        maxSeverity: 'low',
+        renderedOutput: noStagedChangesMessage,
+        maxSeverity: defaultSeverity,
         blockCommit: false,
       );
     }
@@ -75,16 +73,17 @@ class Reviewer {
     }
 
     final parse = _parseResponse(response);
-    final maxSeverity = parse.maxSeverity ?? 'low';
+    final maxSeverity = parse.maxSeverity ?? defaultSeverity;
     final shouldBlock =
         _severityRank(maxSeverity) >= _severityRank(failOnSeverity);
 
     final header = StringBuffer()
-      ..writeln('=== Code Review (model: $model) ===')
-      ..writeln(
-          'Staged diff analyzed. Threshold: $failOnSeverity${strict ? ' (strict)' : ''}')
-      ..writeln('Max severity detected: $maxSeverity')
-      ..writeln('-----------------------------------');
+      ..writeln(reviewHeader.replaceFirst('{model}', model))
+      ..writeln(reviewSubHeader
+          .replaceFirst('{failOnSeverity}', failOnSeverity)
+          .replaceFirst('{strict}', strict ? ' (strict)' : ''))
+      ..writeln(maxSeverityDetected.replaceFirst('{maxSeverity}', maxSeverity))
+      ..writeln(lineSeparator);
 
     final out = StringBuffer()
       ..write(header.toString())
@@ -97,45 +96,18 @@ class Reviewer {
   }
 
   String _buildPrompt(String diff) {
-    return '''Review the following STAGED git diff and produce:
-
-1) A concise, GitHub-like review in Markdown:
-   - High-level summary
-   - Per-file sections with inline comments and line references when possible
-   - Suggestions using fenced code blocks with language and minimal context
-   - Label each comment with Severity: low|medium|high|block
-
-2) A machine-readable JSON summary at the end, enclosed in a fenced block:
-```json
-{
-  "counts": {"low": n, "medium": n, "high": n, "block": n},
-  "max_severity": "low|medium|high|block",
-  "block": true|false
-}
-```
-
-Guidelines:
-- Be precise and actionable; avoid boilerplate.
-- Only refer to lines from the diff. If unsure, say so.
-- Keep the Markdown review readable in a terminal.
-
-Here is the git diff:
-```diff
-$diff
-```
-''';
+    return reviewPromptTemplate.replaceFirst('{diff}', diff);
   }
 
   _ParsedResponse _parseResponse(String response) {
-    final jsonBlock = RegExp(r"```json\s*([\s\S]*?)```", multiLine: true)
-        .firstMatch(response);
+    final jsonBlock = jsonBlockRegExp.firstMatch(response);
     String? reviewMarkdown;
     String? maxSeverity;
     if (jsonBlock != null) {
       final jsonText = jsonBlock.group(1);
       try {
         final data = json.decode(jsonText!) as Map<String, dynamic>;
-        maxSeverity = (data['max_severity'] ?? data['severity'] ?? 'low')
+        maxSeverity = (data['max_severity'] ?? data['severity'] ?? defaultSeverity)
             .toString()
             .toLowerCase();
       } catch (_) {
@@ -164,18 +136,8 @@ $diff
     }
     final hookFile =
         File('${hooksDir.path}${Platform.pathSeparator}pre-commit');
-    final script = r'''#!/usr/bin/env sh
-echo "Running code review bot (pre-commit)..."
-code_review_bot pre-commit
-STATUS=$?
-if [ $STATUS -ne 0 ]; then
-  echo "Pre-commit blocked by code review bot."
-  exit $STATUS
-fi
-exit 0
-''';
 
-    await hookFile.writeAsString(script);
+    await hookFile.writeAsString(preCommitHookScript);
     // Try to make it executable on Unix.
     if (!Platform.isWindows) {
       try {
