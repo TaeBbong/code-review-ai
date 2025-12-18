@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:code_review_bot/reviewer.dart';
+import '../lib/reviewer.dart';
 
 void main(List<String> arguments) async {
   final parser = ArgParser()

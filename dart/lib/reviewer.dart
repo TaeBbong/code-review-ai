@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:code_review_bot/git.dart';
-import 'package:code_review_bot/ollama_client.dart';
-import 'package:code_review_bot/constants.dart';
+import 'git.dart';
+import 'ollama_client.dart';
+import 'constants.dart';
 
 class ReviewResult {
   final String renderedOutput;
