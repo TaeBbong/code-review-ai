@@ -1,0 +1,30 @@
+{
+  "name": "commit-toggle-on-commit",
+  "displayName": "Commit Toggle On Commit (Minimal)",
+  "version": "0.0.2",
+  "publisher": "your-name",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "commitToggleOnCommit.togglePanel",
+        "title": "Commit Toggle: Toggle Panel"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -p . -w"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.86.0",
+    "typescript": "^5.4.0"
+  }
+}
