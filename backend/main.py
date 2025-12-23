@@ -1,15 +1,19 @@
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
 
 from backend.api.routes import router
 from backend.core.logging import setup_logging
+from backend.middleware.request_context import RequestContextMiddleware
+from backend.exceptions.handlers import register_exception_handlers
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+def create_app() -> FastAPI:
     setup_logging()
-    yield
+
+    app = FastAPI(title="ReviewBot", version="0.1.0")
+    app.add_middleware(RequestContextMiddleware)
+    register_exception_handlers(app)
+    app.include_router(router)
+    return app
 
 
-app = FastAPI(title="ReviewBot", version="0.1.0", lifespan=lifespan)
-app.include_router(router)
+app = create_app()
