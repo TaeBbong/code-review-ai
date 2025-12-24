@@ -20,7 +20,17 @@ class OpenAICompatAdapter(LLMAdapter):
             temperature=temperature,
             max_tokens=max_tokens,
         )
+        self._model = model
+        self._base_url = base_url
+
+    @property
+    def provider(self) -> str:
+        return "vllm"
+
+    @property
+    def model_name(self) -> str:
+        return self._model
 
     async def ainvoke(self, messages: Sequence[BaseMessage]) -> str:
-        resp = await self.chat.ainvoke(messages)
-        return resp.content if hasattr(resp, "content") else str(resp)
+        res = await self.chat.ainvoke(messages)
+        return res.content if hasattr(res, "content") else str(res)

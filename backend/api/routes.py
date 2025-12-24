@@ -25,6 +25,6 @@ async def review_schema():
 async def review(req: ReviewRequest):
     try:
         return await service.review(req)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     

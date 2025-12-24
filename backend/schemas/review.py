@@ -33,6 +33,9 @@ class Category(str, Enum):
 class Meta(BaseModel):
     model_config = ConfigDict(extra="forbid")
     variant_id: str = Field(default="G0-baseline")
+    run_id: str = Field(default="unknown")
+    repair_used: bool = Field(default=False)
+    llm_provider: str = Field(default="")
     model: str = Field(default="")
     repo: str = Field(default="")
     diff_target: str = Field(default="raw")

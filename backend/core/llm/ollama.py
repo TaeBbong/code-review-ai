@@ -16,6 +16,16 @@ class OllamaAdapter(LLMAdapter):
             num_predict=max_tokens,
             format="json",
         )
+        self._model = model
+        self._base_url = base_url
+
+    @property
+    def provider(self) -> str:
+        return "ollama"
+
+    @property
+    def model_name(self) -> str:
+        return self._model
 
     async def ainvoke(self, messages: Sequence[BaseMessage]) -> str:
         res = await self.chat.ainvoke(messages)

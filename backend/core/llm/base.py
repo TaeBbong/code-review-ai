@@ -9,10 +9,9 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 
 
 class AdapterChatModel(BaseChatModel):
-    def __init__(self, adapter: LLMAdapter, model_name: str = "adapter"):
+    def __init__(self, adapter: LLMAdapter):
         super().__init__()
         self._adapter = adapter
-        self._model_name = model_name
 
     @property
     def _llm_type(self) -> str:
@@ -20,7 +19,10 @@ class AdapterChatModel(BaseChatModel):
 
     @property
     def _identifying_params(self) -> dict:
-        return {"model": self._model_name}
+        return {
+            "provider": self._adapter.provider,
+            "model": self._adapter.model_name,
+        }
 
     async def _agenerate(
         self,
@@ -44,6 +46,16 @@ class AdapterChatModel(BaseChatModel):
     
 
 class LLMAdapter(ABC):
+    @property
+    @abstractmethod
+    def provider(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def model_name(self) -> str:
+        raise NotImplementedError
+    
     @abstractmethod
     async def ainvoke(self, messages: Sequence[BaseMessage]) -> str:
         """Return raw text output from the model."""

@@ -5,18 +5,16 @@ from datetime import datetime
 
 from pydantic import ValidationError
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 
 from backend.core.context import run_id_var
-from backend.core.settings import settings
 from backend.core.helpers import extract_json_text
 from backend.core.llm.base import AdapterChatModel
 from backend.core.llm.provider import get_llm_adapter
 from backend.schemas.review import ReviewRequest, ReviewResult
 
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 SYSTEM_PROMPT = "You are a strict code review bot. Return ONLY JSON. No markdown."
@@ -52,7 +50,8 @@ Bad output:
 class ReviewService:
     async def review(self, req: ReviewRequest) -> ReviewResult:
         run_id = run_id_var.get()
-        llm = AdapterChatModel(get_llm_adapter(), model_name=settings.ollama_model)
+        adapter = get_llm_adapter()
+        llm = AdapterChatModel(adapter)
         parser = PydanticOutputParser(pydantic_object=ReviewResult)
         format_instructions = parser.get_format_instructions()
 
@@ -97,9 +96,12 @@ class ReviewService:
             result = ReviewResult.model_validate_json(fixed)
 
         result.meta.variant_id = req.variant_id
-        result.meta.model = settings.ollama_model
+        result.meta.run_id = run_id
+        result.meta.repair_used = repair_used
+        result.meta.llm_provider = adapter.provider
+        result.meta.model = adapter.model_name
         result.meta.diff_target = "raw"
-        result.meta.generated_at = datetime.utcnow().isoformat()
+        result.meta.generated_at = datetime.now().isoformat()
 
         logger.info(
             "DONE run_id=%s variant=%s repair_used=%s issues=%d tests=%d questions=%d",
