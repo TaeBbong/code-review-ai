@@ -1,101 +1,94 @@
 from __future__ import annotations
+
 import logging
-import httpx
 from datetime import datetime
 
-from pydantic import ValidationError
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import Runnable
 
 from backend.core.context import run_id_var
-from backend.core.helpers import extract_json_text
+from backend.core.config.config import get_review_config
 from backend.core.llm.base import AdapterChatModel
+from backend.core.llm.invoke import invoke_chain
 from backend.core.llm.provider import get_llm_adapter
+from backend.core.parsing.validate_repair import validate_or_repair
+from backend.core.prompts.registry import PromptPack, PromptPackRegistry
 from backend.schemas.review import ReviewRequest, ReviewResult
-
 
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT = "You are a strict code review bot. Return ONLY JSON. No markdown."
-REPAIR_SYSTEM = "You output only JSON. No extra text."
+def build_chain_from_pack(
+        llm: AdapterChatModel, 
+        pack: PromptPack, 
+        format_instructions: str, 
+        mode: str
+    ) -> Runnable:
+    """
+    mode: "review" | "repair"
+    """
+    if mode == "review":
+        system, user = pack.review_system, pack.review_user
+    elif mode == "repair":
+        system, user = pack.repair_system, pack.repair_user
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
 
-PROMPT = ChatPromptTemplate.from_messages([
-    ("system", SYSTEM_PROMPT),
-    ("human", """Review the following git diff and output JSON that matches the schema.
-
-{format_instructions}
-
-variant_id: {variant_id}
-
-git diff:
-{diff}
-"""),
-])
-
-REPAIR_PROMPT = """Fix your previous output to match the required JSON schema.
-
-{format_instructions}
-
-Rules:
-- Return ONLY JSON. No markdown. No commentary.
-- Do NOT add extra keys.
-- Ensure correct types (e.g., summary is an object; test_suggestions is a list of objects).
-
-Bad output:
-{bad}
-"""
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system),
+        ("human", user),
+    ])
+    return prompt.partial(format_instructions=format_instructions) | llm
 
 
 class ReviewService:
     async def review(self, req: ReviewRequest) -> ReviewResult:
         run_id = run_id_var.get()
+
+        # 1) config + prompt pack
+        cfg = get_review_config()
+        registry = PromptPackRegistry(
+            packs_dir=cfg.packs_dir,
+            default_variant=cfg.default_variant,
+            allowed_variants=cfg.allowed_variants,
+        )
+        variant_id = registry.resolve_variant(getattr(req, "variant_id", None))
+        pack = registry.get(variant_id)
+
+        # 2) llm + parser
         adapter = get_llm_adapter()
         llm = AdapterChatModel(adapter)
+
         parser = PydanticOutputParser(pydantic_object=ReviewResult)
         format_instructions = parser.get_format_instructions()
 
-        chain = PROMPT.partial(format_instructions=format_instructions) | llm
+        # 3) chains
+        review_chain = build_chain_from_pack(llm, pack, format_instructions, mode="review")
+        repair_chain = build_chain_from_pack(llm, pack, format_instructions, mode="repair")
 
-        msg = await chain.ainvoke({"variant_id": req.variant_id, "diff": req.diff})
-        raw = extract_json_text(msg.content)
-        logger.info("LLM run_id=%s variant=%s raw_len=%d", run_id, req.variant_id, len(raw))
-
-        repair_used = False
-
-        try:
-            msg = await chain.ainvoke({"variant_id": req.variant_id, "diff": req.diff})
-        except (httpx.ConnectError, httpx.ReadTimeout, ConnectionError) as e:
-            logger.exception("LLM_UNAVAILABLE run_id=%s err=%s", run_id, str(e))
-            raise RuntimeError("LLM backend is unavailable") from e
-
-        raw = extract_json_text(msg.content)
+        # 4) invoke
+        msg = await invoke_chain(review_chain, {"variant_id": variant_id, "diff": req.diff})
+        content = msg.content or ""
         logger.info(
-            "LLM_OUTPUT run_id=%s variant=%s raw_len=%d raw_head=%r",
-            run_id, req.variant_id, len(raw), raw[:200]
+            f"LLM_OUTPUT run_id={run_id} variant={variant_id} pack={pack.id} len={len(content)}",
         )
 
-        try:
-            result = ReviewResult.model_validate_json(raw)
-        except ValidationError as e:
-            repair_used = True
-            logger.warning("PARSE_FAIL run_id=%s variant=%s err=%s", run_id, req.variant_id, str(e))
+        # 5) validate or repair
+        bad_max_chars = int(pack.params.get("bad_max_chars", 4000))
+        result, repair_used, raw_json, fixed_json = await validate_or_repair(
+            raw_text=content,
+            repair_chain=repair_chain,
+            bad_max_chars=bad_max_chars,
+        )
 
-            repair_chain = ChatPromptTemplate.from_messages([
-                ("system", REPAIR_SYSTEM),
-                ("human", REPAIR_PROMPT),
-            ]).partial(format_instructions=format_instructions) | llm
-
-            fixed_msg = await repair_chain.ainvoke({"bad": raw[:4000]})
-            fixed = extract_json_text(fixed_msg.content)
-
-            logger.info(
-                "LLM_REPAIR run_id=%s fixed_len=%d fixed_head=%r",
-                run_id, len(fixed), fixed[:200]
+        if repair_used:
+            logger.warning(
+                f"LLM_REPAIR_USED run_id={run_id} variant={variant_id}",
             )
-            result = ReviewResult.model_validate_json(fixed)
 
-        result.meta.variant_id = req.variant_id
+        # 6) meta inject
+        result.meta.variant_id = variant_id
         result.meta.run_id = run_id
         result.meta.repair_used = repair_used
         result.meta.llm_provider = adapter.provider
@@ -104,9 +97,6 @@ class ReviewService:
         result.meta.generated_at = datetime.now().isoformat()
 
         logger.info(
-            "DONE run_id=%s variant=%s repair_used=%s issues=%d tests=%d questions=%d",
-            run_id, req.variant_id, repair_used,
-            len(result.issues), len(result.test_suggestions), len(result.questions_to_author)
+            f"DONE run_id={run_id} variant={variant_id} repair_used={repair_used}",
         )
-
         return result

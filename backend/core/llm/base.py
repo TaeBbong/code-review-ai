@@ -1,7 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence, Any
-from pydantic import Field
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage, AIMessage
@@ -62,4 +61,4 @@ class LLMAdapter(ABC):
         raise NotImplementedError
     
     def as_chat_model(self):
-        return AdapterChatModel(self, model_name="adapter")
+        return AdapterChatModel(self)

@@ -1,0 +1,9 @@
+id: g1
+description: "Stricter + lower false positives + ask questions when unsure"
+templates:
+  review_system: review.system.txt
+  review_user: review.user.txt
+  repair_system: repair.system.txt
+  repair_user: repair.user.txt
+params:
+  bad_max_chars: 4000

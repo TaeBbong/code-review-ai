@@ -1,0 +1,8 @@
+Review the following git diff and output JSON that matches the schema.
+
+{format_instructions}
+
+variant_id: {variant_id}
+
+git diff:
+{diff}
