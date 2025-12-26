@@ -1,0 +1,7 @@
+id: g1-mapreduce
+pipeline: backend.pipelines.codes.g1_mapreduce:MapReducePipeline
+params:
+  diff_source: staged
+  max_chars: 400000
+  chunk_by_file: true
+  top_k_files: 12
