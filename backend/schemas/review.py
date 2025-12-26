@@ -107,5 +107,6 @@ class ReviewResult(BaseModel):
 
 class ReviewRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    diff: str = Field(..., description="Unified diff text (git diff output)")
-    variant_id: str = Field(default="G0-baseline")
+    diff: Optional[str] = None
+    diff_target: Optional[str] = Field(default="staged")
+    variant_id: str = Field(default="g0-baseline")
