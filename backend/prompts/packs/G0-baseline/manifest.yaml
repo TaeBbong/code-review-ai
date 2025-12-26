@@ -1,4 +1,4 @@
-id: baseline
+id: g0-baseline
 description: "Baseline strict JSON output"
 templates:
   review_system: review.system.txt

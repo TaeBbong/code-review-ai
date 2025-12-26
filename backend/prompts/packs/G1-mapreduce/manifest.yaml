@@ -1,4 +1,4 @@
-id: g1
+id: g1-mapreduce
 description: "Stricter + lower false positives + ask questions when unsure"
 templates:
   review_system: review.system.txt
