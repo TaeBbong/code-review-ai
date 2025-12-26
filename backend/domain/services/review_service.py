@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 
-from backend.core.settings import settings
-from backend.core.prompts.registry import PromptPackRegistry
+from backend.config.settings import settings
+from backend.domain.prompts.registry import PromptPackRegistry
 from backend.pipelines.registry import PipelineRegistry
-from backend.schemas.review import ReviewRequest, ReviewResult
+from backend.domain.schemas.review import ReviewRequest, ReviewResult
 
 logger = logging.getLogger(__name__)
 

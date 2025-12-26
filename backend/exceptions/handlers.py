@@ -6,7 +6,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
-from backend.core.context import run_id_var
+from backend.shared.context import run_id_var
 
 logger = logging.getLogger("reviewbot")
 

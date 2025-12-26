@@ -8,12 +8,12 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 
-from backend.core.context import run_id_var
-from backend.core.llm.base import AdapterChatModel
-from backend.core.llm.invoke import invoke_chain
-from backend.core.llm.provider import get_llm_adapter
-from backend.core.parsing.validate_repair import validate_or_repair
-from backend.schemas.review import ReviewRequest, ReviewResult
+from backend.shared.context import run_id_var
+from backend.llm.base import AdapterChatModel
+from backend.llm.invoke import invoke_chain
+from backend.llm.provider import get_llm_adapter
+from backend.shared.parser import validate_or_repair
+from backend.domain.schemas.review import ReviewRequest, ReviewResult
 
 
 class ReviewPipeline(ABC):

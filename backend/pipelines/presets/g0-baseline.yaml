@@ -1,6 +1,6 @@
 id: g0-baseline
-pipeline: backend.pipelines.codes.g0_baseline:BaselinePipeline
+pipeline: backend.pipelines.variants.g0_baseline:BaselinePipeline
 params:
-  diff_source: staged          # raw | staged | worktree | range
+  diff_source: staged # raw | staged | worktree | range
   context_lines: 3
   bad_max_chars: 4000

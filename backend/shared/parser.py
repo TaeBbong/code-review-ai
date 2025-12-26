@@ -3,8 +3,8 @@ from __future__ import annotations
 from pydantic import ValidationError
 from langchain_core.runnables import Runnable
 
-from backend.core.helpers import extract_json_text
-from backend.schemas.review import ReviewResult
+from backend.shared.helpers import extract_json_text
+from backend.domain.schemas.review import ReviewResult
 
 
 async def validate_or_repair(

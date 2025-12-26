@@ -8,7 +8,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-from backend.core.context import run_id_var
+from backend.shared.context import run_id_var
 
 logger = logging.getLogger("reviewbot")
 

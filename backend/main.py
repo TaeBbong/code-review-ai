@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from backend.api.routes import router
-from backend.core.logging import setup_logging
+from backend.shared.logging import setup_logging
 from backend.middleware.request_context import RequestContextMiddleware
 from backend.exceptions.handlers import register_exception_handlers
 

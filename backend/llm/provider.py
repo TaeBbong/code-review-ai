@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from backend.core.settings import settings
-from backend.core.llm.base import LLMAdapter
-from backend.core.llm.ollama import OllamaAdapter
-from backend.core.llm.openai_compat import OpenAICompatAdapter
+from backend.config.settings import settings
+from backend.llm.base import LLMAdapter
+from backend.llm.ollama import OllamaAdapter
+from backend.llm.openai_compat import OpenAICompatAdapter
 
 
 def get_llm_adapter() -> LLMAdapter:

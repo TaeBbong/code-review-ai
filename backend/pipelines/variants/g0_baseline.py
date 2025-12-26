@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from backend.core.settings import settings
+from backend.config.settings import settings
 from backend.pipelines.base import ReviewPipeline
-from backend.tools.git_diff import get_git_diff, GitError
+from backend.domain.tools.git_diff import get_git_diff, GitError
 
 
 class BaselinePipeline(ReviewPipeline):

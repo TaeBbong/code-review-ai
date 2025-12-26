@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
-from backend.schemas.review import ReviewRequest, ReviewResult
-from backend.services.review_service import ReviewService
+from backend.domain.schemas.review import ReviewRequest, ReviewResult
+from backend.domain.services.review_service import ReviewService
 
 
 router = APIRouter()

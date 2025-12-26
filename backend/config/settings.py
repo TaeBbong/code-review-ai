@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     max_tokens: int = 2048
 
     review_default_variant: str = "G0-baseline"
-    review_packs_dir: Path = Path("backend/prompts/packs")
+    review_packs_dir: Path = Path("backend/domain/prompts/packs")
     review_presets_dir: Path = Path("backend/pipelines/presets")
     review_allowed_variants_raw: str = ""
     review_repo_path: Path | None = None
