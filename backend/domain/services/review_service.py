@@ -4,8 +4,10 @@ import logging
 
 from backend.config.settings import settings
 from backend.domain.prompts.registry import PromptPackRegistry
+from backend.pipelines.base import ReviewPipeline
 from backend.pipelines.registry import PipelineRegistry
 from backend.domain.schemas.review import ReviewRequest, ReviewResult
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ class ReviewService:
 
         # 2) preset -> pipeline build
         spec = self._pipeline_registry.load_spec(variant_id)
-        pipeline = self._pipeline_registry.build_pipeline(spec, pack=pack)
+        pipeline: ReviewPipeline = self._pipeline_registry.build_pipeline(spec, pack=pack)
 
         # 3) 실행
         logger.info(f"PIPELINE_START variant={variant_id} pack={pack.id} pipeline={spec.pipeline}")
