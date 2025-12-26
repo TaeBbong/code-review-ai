@@ -1,102 +1,53 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import Runnable
-
-from backend.core.context import run_id_var
-from backend.core.config.config import get_review_config
-from backend.core.llm.base import AdapterChatModel
-from backend.core.llm.invoke import invoke_chain
-from backend.core.llm.provider import get_llm_adapter
-from backend.core.parsing.validate_repair import validate_or_repair
-from backend.core.prompts.registry import PromptPack, PromptPackRegistry
+from backend.core.settings import settings
+from backend.core.prompts.registry import PromptPackRegistry
+from backend.pipelines.registry import PipelineRegistry
 from backend.schemas.review import ReviewRequest, ReviewResult
 
 logger = logging.getLogger(__name__)
 
 
-def build_chain_from_pack(
-        llm: AdapterChatModel, 
-        pack: PromptPack, 
-        format_instructions: str, 
-        mode: str
-    ) -> Runnable:
-    """
-    mode: "review" | "repair"
-    """
-    if mode == "review":
-        system, user = pack.review_system, pack.review_user
-    elif mode == "repair":
-        system, user = pack.repair_system, pack.repair_user
-    else:
-        raise ValueError(f"Unknown mode: {mode}")
-
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system),
-        ("human", user),
-    ])
-    return prompt.partial(format_instructions=format_instructions) | llm
-
-
 class ReviewService:
+    """
+    얇은 오케스트레이터(Facade).
+
+    - settings만 참조
+    - variant_id 결정 -> prompt pack 로드
+    - preset(variant) -> pipeline 로드
+    - pipeline.run(req) 실행
+
+    내부 동작(diff 수집, chunking, tool, invoke, repair 등)은 Pipeline 구현에 있음.
+    """
+
+    def __init__(self) -> None:
+        # ✅ settings만 사용
+        self._prompt_registry = PromptPackRegistry(
+            packs_dir=settings.review_packs_dir,
+            default_variant=settings.review_default_variant,
+            allowed_variants=settings.review_allowed_variants,  # tuple[str, ...] or ()
+        )
+        self._pipeline_registry = PipelineRegistry(
+            presets_dir=str(settings.review_presets_dir),
+        )
+
     async def review(self, req: ReviewRequest) -> ReviewResult:
-        run_id = run_id_var.get()
+        # 1) variant 결정 (pack 기준)
+        variant_id = self._prompt_registry.resolve_variant(getattr(req, "variant_id", None))
+        pack = self._prompt_registry.get(variant_id)
 
-        # 1) config + prompt pack
-        cfg = get_review_config()
-        registry = PromptPackRegistry(
-            packs_dir=cfg.packs_dir,
-            default_variant=cfg.default_variant,
-            allowed_variants=cfg.allowed_variants,
-        )
-        variant_id = registry.resolve_variant(getattr(req, "variant_id", None))
-        pack = registry.get(variant_id)
+        # 2) preset -> pipeline build
+        spec = self._pipeline_registry.load_spec(variant_id)
+        pipeline = self._pipeline_registry.build_pipeline(spec, pack=pack)
 
-        # 2) llm + parser
-        adapter = get_llm_adapter()
-        llm = AdapterChatModel(adapter)
-
-        parser = PydanticOutputParser(pydantic_object=ReviewResult)
-        format_instructions = parser.get_format_instructions()
-
-        # 3) chains
-        review_chain = build_chain_from_pack(llm, pack, format_instructions, mode="review")
-        repair_chain = build_chain_from_pack(llm, pack, format_instructions, mode="repair")
-
-        # 4) invoke
-        msg = await invoke_chain(review_chain, {"variant_id": variant_id, "diff": req.diff})
-        content = msg.content or ""
+        # 3) 실행
+        logger.info(f"PIPELINE_START variant={variant_id} pack={pack.id} pipeline={spec.pipeline}")
+        result = await pipeline.run(req)
         logger.info(
-            f"LLM_OUTPUT run_id={run_id} variant={variant_id} pack={pack.id} len={len(content)}",
-        )
-
-        # 5) validate or repair
-        bad_max_chars = int(pack.params.get("bad_max_chars", 4000))
-        result, repair_used, raw_json, fixed_json = await validate_or_repair(
-            raw_text=content,
-            repair_chain=repair_chain,
-            bad_max_chars=bad_max_chars,
-        )
-
-        if repair_used:
-            logger.warning(
-                f"LLM_REPAIR_USED run_id={run_id} variant={variant_id}",
-            )
-
-        # 6) meta inject
-        result.meta.variant_id = variant_id
-        result.meta.run_id = run_id
-        result.meta.repair_used = repair_used
-        result.meta.llm_provider = adapter.provider
-        result.meta.model = adapter.model_name
-        result.meta.diff_target = "raw"
-        result.meta.generated_at = datetime.now().isoformat()
-
-        logger.info(
-            f"DONE run_id={run_id} variant={variant_id} repair_used={repair_used}",
+            "PIPELINE_DONE variant=%s repair_used=%s",
+            variant_id,
+            getattr(getattr(result, "meta", None), "repair_used", None),
         )
         return result
