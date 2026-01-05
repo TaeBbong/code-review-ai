@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from backend.config.settings import settings
 from backend.pipelines.base import ReviewPipeline
 from backend.pipelines.evidence.refs_builder import build_refs_evidence
-from backend.domain.tools.git_diff import get_git_diff, GitError
+from backend.domain.schemas.diff import DiffChunk
+from backend.domain.tools.git_diff import get_git_diff, GitError, chunk_diff_by_file
 
 
 class MapReducePipeline(ReviewPipeline):
     """
-    G1-mapreduce: ripgrep을 활용한 심볼 레퍼런스 수집 파이프라인.
+    G1-mapreduce: 파일별 분할 리뷰 + ripgrep 심볼 레퍼런스 수집 파이프라인.
 
     핵심 기능:
+    - diff를 파일별로 분할하여 병렬 리뷰 (map-reduce)
     - diff에서 변경된 심볼(함수, 클래스 등) 추출
     - ripgrep으로 해당 심볼의 레퍼런스를 검색
     - evidence_pack.refs에 검색 결과를 포함하여 LLM에 전달
@@ -38,12 +40,56 @@ class MapReducePipeline(ReviewPipeline):
             diff = ""
         return diff, diff_target
 
-    async def build_review_payload(self, *, req, diff: str, diff_target: str) -> Dict[str, Any]:
+    async def split_chunks(self, diff: str) -> List[DiffChunk]:
+        """
+        diff를 파일별로 분할.
+        파일 수가 min_files_for_split 미만이면 분할하지 않음.
+        """
+        if not diff.strip():
+            return [DiffChunk(file_path="", content=diff)]
+
+        min_files = int(self.params.get("min_files_for_split", 2))
+        max_files = int(self.params.get("max_files_for_split", 20))
+
+        file_chunks = chunk_diff_by_file(diff)
+
+        # 파일 수가 적으면 분할 안 함 (단일 LLM 호출이 더 효율적)
+        if len(file_chunks) < min_files:
+            return [DiffChunk(file_path="", content=diff)]
+
+        # 파일 수가 너무 많으면 상위 N개만 (토큰 제한)
+        if len(file_chunks) > max_files:
+            file_chunks = file_chunks[:max_files]
+
+        chunks = [
+            DiffChunk(
+                file_path=fc["file_b"],
+                content=fc["diff"],
+                metadata={"file_a": fc["file_a"]},
+            )
+            for fc in file_chunks
+        ]
+
+        return chunks
+
+    async def build_review_payload(
+        self,
+        *,
+        req,
+        diff: str,
+        diff_target: str,
+        chunk: DiffChunk | None = None,
+    ) -> Dict[str, Any]:
         """
         LLM에 전달할 payload를 구성.
         evidence_pack.refs에 ripgrep 검색 결과를 포함.
         """
-        payload = await super().build_review_payload(req=req, diff=diff, diff_target=diff_target)
+        payload = await super().build_review_payload(
+            req=req,
+            diff=diff,
+            diff_target=diff_target,
+            chunk=chunk,
+        )
 
         # repo_root 결정: settings > params > current directory
         repo_root = (
