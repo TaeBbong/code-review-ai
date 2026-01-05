@@ -2,6 +2,8 @@ id: g1-mapreduce
 pipeline: backend.pipelines.variants.g1_mapreduce:MapReducePipeline
 params:
   diff_source: staged
+  context_lines: 3
   max_chars: 400000
-  chunk_by_file: true
-  top_k_files: 12
+  max_symbols: 12
+  top_k_per_symbol: 6
+  bad_max_chars: 4000

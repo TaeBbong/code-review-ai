@@ -60,6 +60,15 @@ class PromptPackRegistry:
     def _load_pack_cached(packs_dir_str: str, vid: str) -> PromptPack:
         packs_dir = Path(packs_dir_str)
         pack_dir = packs_dir / vid
+
+        # 대소문자 구분 없이 폴더 찾기 (Linux 호환)
+        if not pack_dir.exists():
+            vid_lower = vid.lower()
+            for candidate in packs_dir.iterdir():
+                if candidate.is_dir() and candidate.name.lower() == vid_lower:
+                    pack_dir = candidate
+                    break
+
         if not pack_dir.exists():
             raise PromptPackNotFound(f"Prompt pack not found: {pack_dir}")
 

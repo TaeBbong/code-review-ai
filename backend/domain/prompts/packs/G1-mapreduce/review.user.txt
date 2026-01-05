@@ -7,6 +7,11 @@ variant_id: {variant_id}
 Constraints:
 - Keep issues concise (1-3 sentences each).
 - If you cannot justify an issue from the diff, convert it into a question.
+- Use the evidence_refs below to understand how changed symbols are used elsewhere.
+- Reference evidence IDs (e.g., E-REF-001) in your issues when relevant.
 
-git diff:
+## Evidence References (ripgrep results for changed symbols)
+{evidence_refs_json}
+
+## Git Diff
 {diff}
