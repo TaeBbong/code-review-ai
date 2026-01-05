@@ -46,9 +46,12 @@ class PromptPackRegistry:
 
     def resolve_variant(self, variant_id: str | None) -> str:
         vid = (variant_id or "").strip() or self.default_variant
-        if self.allowed_variants and vid not in set(self.allowed_variants):
-            # 운영 정책: 허용되지 않은 variant면 default로 폴백
-            return self.default_variant
+        if self.allowed_variants:
+            # 대소문자 구분 없이 allowed_variants 체크
+            allowed_lower = {v.lower() for v in self.allowed_variants}
+            if vid.lower() not in allowed_lower:
+                # 운영 정책: 허용되지 않은 variant면 default로 폴백
+                return self.default_variant
         return vid
 
     def get(self, variant_id: str | None) -> PromptPack:
