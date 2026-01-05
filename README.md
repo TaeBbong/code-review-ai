@@ -39,19 +39,25 @@ backend/
 │   │       └── G1-mapreduce/
 │   │           └── ...
 │   ├── schemas/
-│   │   └── review.py            # Pydantic 스키마 (Request/Response)
+│   │   ├── review.py            # Pydantic 스키마 (Request/Response)
+│   │   └── diff.py              # DiffChunk 스키마 (map-reduce용)
 │   ├── services/
 │   │   └── review_service.py    # ReviewService (Facade 패턴)
 │   └── tools/
-│       └── git_diff.py          # Git diff 유틸리티
+│       ├── git_diff.py          # Git diff 유틸리티
+│       ├── get_symbols.py       # diff에서 심볼 추출 (함수, 클래스 등)
+│       └── ripgrep_refs.py      # ripgrep 기반 심볼 레퍼런스 검색
 ├── pipelines/
 │   ├── base.py                  # ReviewPipeline ABC (Template Method)
 │   ├── registry.py              # PipelineRegistry
+│   ├── evidence/
+│   │   └── refs_builder.py      # evidence_pack.refs 빌더
 │   ├── presets/                 # Variant별 파이프라인 설정
 │   │   ├── g0-baseline.yaml
 │   │   └── g1-mapreduce.yaml
 │   └── variants/                # 파이프라인 구현체
-│       └── g0_baseline.py
+│       ├── g0_baseline.py       # 단순 diff → LLM
+│       └── g1_mapreduce.py      # 파일별 분할 + evidence 수집
 ├── llm/
 │   ├── base.py                  # LLMAdapter ABC, AdapterChatModel
 │   ├── provider.py              # get_llm_adapter() 팩토리
@@ -194,32 +200,24 @@ class ReviewPipeline(ABC):
         # 1) diff 준비 (hook)
         diff, diff_target = await self.resolve_diff(req)
 
-        # 2) LLM + Parser 준비
+        # 2) 청크 분할 (hook) - map-reduce용
+        chunks = await self.split_chunks(diff)
+
+        # 3) LLM + Parser 준비
         adapter = get_llm_adapter()
         llm = AdapterChatModel(adapter)
-        parser = PydanticOutputParser(pydantic_object=ReviewResult)
 
-        # 3) Chain 구성
-        review_chain = self.build_chain(llm, mode="review", ...)
-        repair_chain = self.build_chain(llm, mode="repair", ...)
+        # 4) 리뷰 실행 (단일 vs map-reduce)
+        if len(chunks) <= 1:
+            result = await self._review_single(...)
+        else:
+            result = await self._review_map_reduce(...)
 
-        # 4) LLM 호출
-        payload = await self.build_review_payload(req=req, diff=diff, ...)
-        msg = await invoke_chain(review_chain, payload)
-
-        # 5) 결과 검증 또는 repair
-        result, repair_used, ... = await validate_or_repair(
-            raw_text=msg.content,
-            repair_chain=repair_chain,
-            ...
-        )
-
-        # 6) 메타 정보 주입
+        # 5) 메타 정보 주입
         result.meta.variant_id = variant_id
-        result.meta.run_id = run_id
         ...
 
-        # 7) 후처리 (hook)
+        # 6) 후처리 (hook)
         await self.after_run(req=req, result=result, ...)
         return result
 
@@ -228,8 +226,14 @@ class ReviewPipeline(ABC):
     async def resolve_diff(self, req) -> tuple[str, str]:
         """diff 텍스트와 타겟 레이블 반환"""
 
-    async def build_review_payload(self, *, req, diff, diff_target) -> dict:
+    async def split_chunks(self, diff: str) -> List[DiffChunk]:
+        """diff를 청크로 분할 (기본: 분할 안 함)"""
+
+    async def build_review_payload(self, *, req, diff, diff_target, chunk) -> dict:
         """LLM에 전달할 payload 구성 (확장 가능)"""
+
+    async def reduce_results(self, results: List[ReviewResult]) -> ReviewResult:
+        """여러 리뷰 결과를 병합 (기본: 모든 이슈 합치기)"""
 
     async def after_run(self, *, req, result, raw_text, ...) -> None:
         """후처리 hook (로깅, 저장 등)"""
@@ -237,9 +241,13 @@ class ReviewPipeline(ABC):
 
 **왜 Template Method 패턴인가요?**
 
-- 파이프라인 실행 순서(diff 준비 → LLM 호출 → 검증 → 후처리)는 **고정**
+- 파이프라인 실행 순서(diff 준비 → 청크 분할 → LLM 호출 → 병합 → 후처리)는 **고정**
 - variant별로 다른 부분만 **hook 메서드**로 오버라이드
 - 코드 중복 최소화, 일관된 실행 흐름 보장
+
+**Map-Reduce 동작:**
+- `split_chunks()`가 단일 청크 반환 → 기존처럼 단일 LLM 호출
+- `split_chunks()`가 여러 청크 반환 → 병렬 리뷰 후 `reduce_results()`로 병합
 
 ### 6. `pipelines/variants/g0_baseline.py` - BaselinePipeline
 
@@ -403,13 +411,41 @@ Variant는 **프롬프트 팩 + 파이프라인**의 조합입니다.
 | Variant ID | 프롬프트 팩 | 파이프라인 | 특징 |
 |------------|-------------|------------|------|
 | `g0-baseline` | `G0-baseline` | `BaselinePipeline` | 단순 diff → LLM → JSON |
-| `g1-mapreduce` | `G1-mapreduce` | `MapReducePipeline` | 파일별 분할 처리 (예정) |
+| `g1-mapreduce` | `G1-mapreduce` | `MapReducePipeline` | 파일별 분할 + ripgrep evidence 수집 |
+
+#### G1-mapreduce 상세
+
+G1-mapreduce는 두 가지 핵심 기능을 제공합니다:
+
+**1. Evidence 수집 (ripgrep 기반)**
+- diff에서 변경된 심볼(함수, 클래스 등)을 추출
+- ripgrep으로 해당 심볼의 사용처(레퍼런스)를 검색
+- `evidence_pack.refs`에 검색 결과를 포함하여 LLM에 전달
+- LLM이 변경의 영향 범위를 더 정확히 파악 가능
+
+**2. Map-Reduce 병렬 처리**
+- 파일 수가 `min_files_for_split` 이상이면 파일별로 diff를 분할
+- 각 파일을 병렬로 리뷰 (최대 `max_concurrency`개 동시 실행)
+- 개별 리뷰 결과를 `reduce_results()`로 병합
+- 대규모 diff에서 토큰 제한 회피 + 파일별 집중 리뷰 가능
+
+```yaml
+# g1-mapreduce.yaml 설정 예시
+params:
+  min_files_for_split: 2   # 최소 파일 수 (미만이면 분할 안 함)
+  max_files_for_split: 20  # 최대 파일 수 (초과 시 상위 N개만)
+  max_concurrency: 4       # 병렬 LLM 호출 수
+  max_symbols: 12          # 검색할 심볼 최대 개수
+  top_k_per_symbol: 6      # 심볼당 레퍼런스 최대 개수
+```
 
 ### Variant 선택 우선순위
 
 1. 요청의 `variant_id` 파라미터
 2. 환경 변수 `REVIEW_DEFAULT_VARIANT`
 3. 하드코딩된 기본값 `"G0-baseline"`
+
+> **참고**: `variant_id`는 대소문자를 구분하지 않습니다. `g1-mapreduce`, `G1-mapreduce`, `G1-MAPREDUCE` 모두 동일하게 처리됩니다.
 
 ### 허용된 Variant 제한
 
