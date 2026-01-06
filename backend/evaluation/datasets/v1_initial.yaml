@@ -1,0 +1,687 @@
+# Evaluation Dataset v1 - Initial 20 samples
+# Categories: correctness(6), maintainability(5), performance(5), security(4)
+
+name: "v1_initial"
+version: "1.0.0"
+description: "초기 평가 데이터셋 - 20개 샘플 (correctness 6, maintainability 5, performance 5, security 4)"
+
+samples:
+  # ===========================================================================
+  # CORRECTNESS (6 samples) - 코드 퀄리티, 버그, 논리 오류
+  # ===========================================================================
+
+  - id: "correctness-001"
+    metadata:
+      source: "synthetic"
+      difficulty: "easy"
+      primary_category: "correctness"
+      tags: ["null-check", "runtime-error"]
+      description: "None 체크 없이 메서드 호출 - NoneType 에러 유발"
+    input:
+      diff: |
+        diff --git a/services/user_service.py b/services/user_service.py
+        --- a/services/user_service.py
+        +++ b/services/user_service.py
+        @@ -15,6 +15,10 @@ class UserService:
+             def get_user_display_name(self, user_id: int) -> str:
+                 user = self.repository.find_by_id(user_id)
+        -        return user.name
+        +        return user.name.upper()
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["None", "null", "NoneType", "AttributeError"]
+          description_keywords: ["None", "체크", "null", "존재하지 않"]
+          issue_id: "exp-001"
+          rationale: "user가 None일 수 있는데 체크 없이 .name.upper() 호출"
+      min_issues: 1
+      max_issues: 3
+
+  - id: "correctness-002"
+    metadata:
+      source: "synthetic"
+      difficulty: "easy"
+      primary_category: "correctness"
+      tags: ["off-by-one", "loop"]
+      description: "Off-by-one 에러 - 배열 인덱스 범위 초과"
+    input:
+      diff: |
+        diff --git a/utils/array_utils.py b/utils/array_utils.py
+        --- a/utils/array_utils.py
+        +++ b/utils/array_utils.py
+        @@ -5,7 +5,7 @@ def sum_pairs(numbers: list[int]) -> int:
+             """Sum adjacent pairs in the list."""
+             total = 0
+        -    for i in range(len(numbers) - 1):
+        +    for i in range(len(numbers)):
+                 total += numbers[i] + numbers[i + 1]
+             return total
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["off-by-one", "index", "IndexError", "범위", "bound"]
+          description_keywords: ["인덱스", "범위", "초과", "i + 1", "마지막"]
+          issue_id: "exp-002"
+          rationale: "마지막 인덱스에서 i+1 접근시 IndexError 발생"
+      min_issues: 1
+      expected_risk: "high"
+
+  - id: "correctness-003"
+    metadata:
+      source: "synthetic"
+      difficulty: "medium"
+      primary_category: "correctness"
+      tags: ["type-error", "string-concat"]
+      description: "타입 불일치 - 문자열과 정수 연결"
+    input:
+      diff: |
+        diff --git a/services/report_service.py b/services/report_service.py
+        --- a/services/report_service.py
+        +++ b/services/report_service.py
+        @@ -20,7 +20,7 @@ class ReportService:
+             def generate_summary(self, stats: dict) -> str:
+                 count = stats.get("count", 0)
+                 name = stats.get("name", "Unknown")
+        -        return f"Report: {name} - Count: {count}"
+        +        return "Report: " + name + " - Count: " + count
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["type", "TypeError", "concat", "문자열", "정수"]
+          description_keywords: ["문자열", "정수", "연결", "str", "int", "concat"]
+          issue_id: "exp-003"
+          rationale: "count가 int인데 문자열과 + 연산자로 연결 시도"
+      min_issues: 1
+
+  - id: "correctness-004"
+    metadata:
+      source: "synthetic"
+      difficulty: "medium"
+      primary_category: "correctness"
+      tags: ["logic-error", "condition"]
+      description: "조건문 논리 오류 - AND/OR 혼동"
+    input:
+      diff: |
+        diff --git a/services/auth_service.py b/services/auth_service.py
+        --- a/services/auth_service.py
+        +++ b/services/auth_service.py
+        @@ -30,7 +30,7 @@ class AuthService:
+             def can_access_resource(self, user: User, resource: Resource) -> bool:
+                 # User must be admin OR owner of the resource
+        -        return user.is_admin or user.id == resource.owner_id
+        +        return user.is_admin and user.id == resource.owner_id
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["logic", "논리", "AND", "OR", "조건"]
+          description_keywords: ["admin", "owner", "OR", "AND", "논리", "의도"]
+          issue_id: "exp-004"
+          rationale: "주석은 OR인데 코드는 AND - admin도 owner여야 접근 가능해짐"
+      min_issues: 1
+      expected_risk: "high"
+
+  - id: "correctness-005"
+    metadata:
+      source: "synthetic"
+      difficulty: "hard"
+      primary_category: "correctness"
+      tags: ["async", "race-condition"]
+      description: "비동기 코드에서 상태 변경 후 await - 경쟁 상태"
+    input:
+      diff: |
+        diff --git a/services/order_service.py b/services/order_service.py
+        --- a/services/order_service.py
+        +++ b/services/order_service.py
+        @@ -45,10 +45,9 @@ class OrderService:
+             async def process_order(self, order_id: int) -> None:
+                 order = await self.repository.get(order_id)
+        -        order.status = "processing"
+        -        await self.repository.save(order)
+        -
+        -        await self.payment_service.charge(order)
+        +        order.status = "completed"
+        +        await self.payment_service.charge(order)
+        +        await self.repository.save(order)
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["race", "async", "상태", "순서", "경쟁"]
+          description_keywords: ["status", "completed", "charge", "실패", "저장"]
+          issue_id: "exp-005"
+          rationale: "결제 전에 completed로 설정하고, 결제 실패해도 저장됨"
+      min_issues: 1
+
+  - id: "correctness-006"
+    metadata:
+      source: "synthetic"
+      difficulty: "easy"
+      primary_category: "correctness"
+      tags: ["return-value", "missing-return"]
+      description: "조건부 반환에서 일부 경로 반환값 누락"
+    input:
+      diff: |
+        diff --git a/utils/validator.py b/utils/validator.py
+        --- a/utils/validator.py
+        +++ b/utils/validator.py
+        @@ -10,9 +10,10 @@ def validate_age(age: int) -> bool:
+             """Validate that age is within acceptable range."""
+             if age < 0:
+                 return False
+        -    if age > 150:
+        -        return False
+        -    return True
+        +    elif age > 150:
+        +        return False
+        +    elif age >= 18:
+        +        return True
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["return", "반환", "None", "경로", "path"]
+          description_keywords: ["0", "18", "반환", "None", "누락"]
+          issue_id: "exp-006"
+          rationale: "0 <= age < 18 인 경우 return문이 없어 None 반환"
+      min_issues: 1
+
+  # ===========================================================================
+  # MAINTAINABILITY (5 samples) - 유지보수성, 가독성, 복잡도
+  # ===========================================================================
+
+  - id: "maintainability-001"
+    metadata:
+      source: "synthetic"
+      difficulty: "easy"
+      primary_category: "maintainability"
+      tags: ["magic-number", "constant"]
+      description: "매직 넘버 하드코딩"
+    input:
+      diff: |
+        diff --git a/services/pricing_service.py b/services/pricing_service.py
+        --- a/services/pricing_service.py
+        +++ b/services/pricing_service.py
+        @@ -12,6 +12,8 @@ class PricingService:
+             def calculate_final_price(self, base_price: float) -> float:
+        -        return base_price
+        +        tax = base_price * 0.1
+        +        discount = base_price * 0.05 if base_price > 100 else 0
+        +        return base_price + tax - discount
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["magic", "상수", "하드코딩", "constant"]
+          description_keywords: ["0.1", "0.05", "100", "상수", "의미"]
+          issue_id: "exp-007"
+          rationale: "0.1, 0.05, 100 등 매직 넘버가 의미 없이 하드코딩됨"
+      min_issues: 1
+      max_issues: 4
+
+  - id: "maintainability-002"
+    metadata:
+      source: "synthetic"
+      difficulty: "medium"
+      primary_category: "maintainability"
+      tags: ["code-duplication", "dry"]
+      description: "코드 중복 - 동일 로직 반복"
+    input:
+      diff: |
+        diff --git a/services/notification_service.py b/services/notification_service.py
+        --- a/services/notification_service.py
+        +++ b/services/notification_service.py
+        @@ -20,6 +20,24 @@ class NotificationService:
+             def send_email(self, user_id: int, message: str) -> None:
+                 user = self.user_repo.get(user_id)
+        +        if user is None:
+        +            logger.error(f"User {user_id} not found")
+        +            return
+        +        if not user.email:
+        +            logger.error(f"User {user_id} has no email")
+        +            return
+                 self.email_client.send(user.email, message)
+        +
+        +    def send_sms(self, user_id: int, message: str) -> None:
+        +        user = self.user_repo.get(user_id)
+        +        if user is None:
+        +            logger.error(f"User {user_id} not found")
+        +            return
+        +        if not user.phone:
+        +            logger.error(f"User {user_id} has no phone")
+        +            return
+        +        self.sms_client.send(user.phone, message)
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["중복", "duplication", "DRY", "반복"]
+          description_keywords: ["user", "검증", "로직", "추출", "공통"]
+          issue_id: "exp-008"
+          rationale: "user 조회 및 검증 로직이 두 메서드에서 중복됨"
+      min_issues: 1
+
+  - id: "maintainability-003"
+    metadata:
+      source: "synthetic"
+      difficulty: "medium"
+      primary_category: "maintainability"
+      tags: ["complexity", "nested-conditions"]
+      description: "과도하게 중첩된 조건문"
+    input:
+      diff: |
+        diff --git a/services/order_validator.py b/services/order_validator.py
+        --- a/services/order_validator.py
+        +++ b/services/order_validator.py
+        @@ -10,6 +10,18 @@ class OrderValidator:
+             def validate_order(self, order: Order) -> tuple[bool, str]:
+        -        return True, "Valid"
+        +        if order.items:
+        +            if len(order.items) <= 100:
+        +                if order.total > 0:
+        +                    if order.customer_id:
+        +                        if order.shipping_address:
+        +                            if order.payment_method:
+        +                                return True, "Valid"
+        +                            else:
+        +                                return False, "No payment"
+        +                        else:
+        +                            return False, "No address"
+        +                    else:
+        +                        return False, "No customer"
+        +                else:
+        +                    return False, "Invalid total"
+        +            else:
+        +                return False, "Too many items"
+        +        else:
+        +            return False, "No items"
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["중첩", "nested", "복잡", "complexity", "indent"]
+          description_keywords: ["중첩", "깊이", "early return", "guard clause"]
+          issue_id: "exp-009"
+          rationale: "6단계 중첩 조건문 - early return 패턴으로 개선 필요"
+      min_issues: 1
+
+  - id: "maintainability-004"
+    metadata:
+      source: "synthetic"
+      difficulty: "easy"
+      primary_category: "maintainability"
+      tags: ["naming", "unclear-variable"]
+      description: "불명확한 변수명"
+    input:
+      diff: |
+        diff --git a/services/analytics_service.py b/services/analytics_service.py
+        --- a/services/analytics_service.py
+        +++ b/services/analytics_service.py
+        @@ -15,6 +15,12 @@ class AnalyticsService:
+             def calculate_metrics(self, data: list[dict]) -> dict:
+        -        return {}
+        +        a = len(data)
+        +        b = sum(d.get("value", 0) for d in data)
+        +        c = b / a if a > 0 else 0
+        +        d = max((d.get("value", 0) for d in data), default=0)
+        +        e = min((d.get("value", 0) for d in data), default=0)
+        +        return {"count": a, "sum": b, "avg": c, "max": d, "min": e}
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["변수명", "naming", "이름", "가독성"]
+          description_keywords: ["a", "b", "c", "의미", "명확"]
+          issue_id: "exp-010"
+          rationale: "a, b, c, d, e 변수명이 의미를 전달하지 않음"
+      min_issues: 1
+
+  - id: "maintainability-005"
+    metadata:
+      source: "synthetic"
+      difficulty: "hard"
+      primary_category: "maintainability"
+      tags: ["god-function", "srp"]
+      description: "너무 많은 책임을 가진 함수 (SRP 위반)"
+    input:
+      diff: |
+        diff --git a/services/user_handler.py b/services/user_handler.py
+        --- a/services/user_handler.py
+        +++ b/services/user_handler.py
+        @@ -10,6 +10,30 @@ class UserHandler:
+             def handle_user_registration(self, data: dict) -> dict:
+        -        return {"status": "ok"}
+        +        # Validate input
+        +        if not data.get("email") or "@" not in data["email"]:
+        +            raise ValueError("Invalid email")
+        +        if not data.get("password") or len(data["password"]) < 8:
+        +            raise ValueError("Password too short")
+        +
+        +        # Hash password
+        +        import hashlib
+        +        password_hash = hashlib.sha256(data["password"].encode()).hexdigest()
+        +
+        +        # Save to database
+        +        user_id = self.db.execute(
+        +            "INSERT INTO users (email, password) VALUES (?, ?)",
+        +            (data["email"], password_hash)
+        +        )
+        +
+        +        # Send welcome email
+        +        self.email_client.send(
+        +            data["email"],
+        +            "Welcome!",
+        +            "Thanks for registering"
+        +        )
+        +
+        +        # Log analytics
+        +        self.analytics.track("user_registered", {"user_id": user_id})
+        +
+        +        return {"status": "ok", "user_id": user_id}
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["책임", "SRP", "responsibility", "분리", "함수"]
+          description_keywords: ["validation", "hashing", "database", "email", "분리"]
+          issue_id: "exp-011"
+          rationale: "하나의 함수가 검증, 해싱, DB저장, 이메일, 분석 등 너무 많은 책임"
+      min_issues: 1
+      max_issues: 4
+
+  # ===========================================================================
+  # PERFORMANCE (5 samples) - 성능 이슈
+  # ===========================================================================
+
+  - id: "performance-001"
+    metadata:
+      source: "synthetic"
+      difficulty: "easy"
+      primary_category: "performance"
+      tags: ["n-plus-one", "database"]
+      description: "N+1 쿼리 문제"
+    input:
+      diff: |
+        diff --git a/services/order_service.py b/services/order_service.py
+        --- a/services/order_service.py
+        +++ b/services/order_service.py
+        @@ -20,6 +20,10 @@ class OrderService:
+             def get_order_summaries(self, user_id: int) -> list[dict]:
+                 orders = self.order_repo.find_by_user(user_id)
+        -        return [{"id": o.id} for o in orders]
+        +        summaries = []
+        +        for order in orders:
+        +            customer = self.customer_repo.get(order.customer_id)
+        +            summaries.append({"id": order.id, "customer_name": customer.name})
+        +        return summaries
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["N+1", "query", "쿼리", "loop", "반복"]
+          description_keywords: ["N+1", "반복", "쿼리", "customer", "join", "batch"]
+          issue_id: "exp-012"
+          rationale: "orders 반복문 안에서 customer 개별 조회 - N+1 쿼리"
+      min_issues: 1
+      expected_risk: "medium"
+
+  - id: "performance-002"
+    metadata:
+      source: "synthetic"
+      difficulty: "easy"
+      primary_category: "performance"
+      tags: ["inefficient-algorithm", "list-in-loop"]
+      description: "리스트에서 반복적인 in 연산"
+    input:
+      diff: |
+        diff --git a/utils/dedup.py b/utils/dedup.py
+        --- a/utils/dedup.py
+        +++ b/utils/dedup.py
+        @@ -5,6 +5,11 @@ def remove_duplicates(items: list[str]) -> list[str]:
+             """Remove duplicate items while preserving order."""
+        -    return list(dict.fromkeys(items))
+        +    result = []
+        +    for item in items:
+        +        if item not in result:
+        +            result.append(item)
+        +    return result
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["O(n²)", "리스트", "in", "성능", "복잡도"]
+          description_keywords: ["O(n²)", "리스트", "set", "dict", "시간복잡도"]
+          issue_id: "exp-013"
+          rationale: "list에서 in 연산은 O(n), 전체 O(n²) - set 사용 권장"
+      min_issues: 1
+
+  - id: "performance-003"
+    metadata:
+      source: "synthetic"
+      difficulty: "medium"
+      primary_category: "performance"
+      tags: ["memory", "large-list"]
+      description: "불필요하게 큰 리스트를 메모리에 로드"
+    input:
+      diff: |
+        diff --git a/services/export_service.py b/services/export_service.py
+        --- a/services/export_service.py
+        +++ b/services/export_service.py
+        @@ -15,6 +15,10 @@ class ExportService:
+             def export_all_users(self) -> None:
+        -        pass
+        +        all_users = list(self.user_repo.get_all())  # Returns millions of users
+        +
+        +        with open("users.csv", "w") as f:
+        +            for user in all_users:
+        +                f.write(f"{user.id},{user.name}\n")
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["메모리", "memory", "list", "generator", "스트리밍"]
+          description_keywords: ["메모리", "list", "generator", "스트리밍", "batch"]
+          issue_id: "exp-014"
+          rationale: "수백만 유저를 한번에 메모리에 로드 - 제너레이터/배치 필요"
+      min_issues: 1
+      expected_risk: "high"
+
+  - id: "performance-004"
+    metadata:
+      source: "synthetic"
+      difficulty: "medium"
+      primary_category: "performance"
+      tags: ["string-concat", "loop"]
+      description: "반복문 내 문자열 연결"
+    input:
+      diff: |
+        diff --git a/utils/formatter.py b/utils/formatter.py
+        --- a/utils/formatter.py
+        +++ b/utils/formatter.py
+        @@ -8,6 +8,10 @@ def format_items(items: list[str]) -> str:
+             """Format items as comma-separated string."""
+        -    return ", ".join(items)
+        +    result = ""
+        +    for i, item in enumerate(items):
+        +        result += item
+        +        if i < len(items) - 1:
+        +            result += ", "
+        +    return result
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["문자열", "string", "concat", "연결", "+="]
+          description_keywords: ["문자열", "연결", "join", "O(n²)", "불변"]
+          issue_id: "exp-015"
+          rationale: "문자열 += 반복은 O(n²) - join() 사용 권장"
+      min_issues: 1
+
+  - id: "performance-005"
+    metadata:
+      source: "synthetic"
+      difficulty: "hard"
+      primary_category: "performance"
+      tags: ["cache", "repeated-computation"]
+      description: "동일한 비용 높은 연산 반복 호출"
+    input:
+      diff: |
+        diff --git a/services/pricing_engine.py b/services/pricing_engine.py
+        --- a/services/pricing_engine.py
+        +++ b/services/pricing_engine.py
+        @@ -25,6 +25,15 @@ class PricingEngine:
+             def calculate_cart_total(self, cart: Cart) -> float:
+        -        return sum(item.price for item in cart.items)
+        +        subtotal = 0
+        +        for item in cart.items:
+        +            # get_exchange_rate makes API call
+        +            rate = self.forex_service.get_exchange_rate(item.currency, "USD")
+        +            subtotal += item.price * rate
+        +
+        +        # Apply discount based on exchange rate
+        +        usd_rate = self.forex_service.get_exchange_rate("EUR", "USD")
+        +        if subtotal > 100 * usd_rate:
+        +            subtotal *= 0.9
+        +
+        +        return subtotal
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["캐시", "cache", "반복", "API", "호출"]
+          description_keywords: ["exchange_rate", "API", "캐시", "반복", "호출"]
+          issue_id: "exp-016"
+          rationale: "동일 환율을 반복 조회 - 캐싱 필요"
+      min_issues: 1
+
+  # ===========================================================================
+  # SECURITY (4 samples) - 보안 취약점
+  # ===========================================================================
+
+  - id: "security-001"
+    metadata:
+      source: "synthetic"
+      difficulty: "easy"
+      primary_category: "security"
+      tags: ["sql-injection", "owasp-top10"]
+      description: "SQL Injection 취약점"
+    input:
+      diff: |
+        diff --git a/repositories/user_repo.py b/repositories/user_repo.py
+        --- a/repositories/user_repo.py
+        +++ b/repositories/user_repo.py
+        @@ -15,6 +15,8 @@ class UserRepository:
+             def find_by_username(self, username: str) -> Optional[User]:
+        -        return self.session.query(User).filter(User.username == username).first()
+        +        query = f"SELECT * FROM users WHERE username = '{username}'"
+        +        result = self.session.execute(query)
+        +        return result.fetchone()
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["SQL", "injection", "인젝션"]
+          description_keywords: ["SQL", "injection", "parameterized", "파라미터", "f-string"]
+          issue_id: "exp-017"
+          rationale: "f-string으로 SQL 쿼리 구성 - SQL Injection 취약"
+      min_issues: 1
+      expected_risk: "high"
+      should_have_blockers: true
+
+  - id: "security-002"
+    metadata:
+      source: "synthetic"
+      difficulty: "easy"
+      primary_category: "security"
+      tags: ["hardcoded-secret", "credential"]
+      description: "하드코딩된 비밀키"
+    input:
+      diff: |
+        diff --git a/config/settings.py b/config/settings.py
+        --- a/config/settings.py
+        +++ b/config/settings.py
+        @@ -10,6 +10,10 @@ class Settings:
+             DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+        +
+        +    # API Keys
+        +    STRIPE_SECRET_KEY = "sk_live_abc123def456ghi789"
+        +    DATABASE_PASSWORD = "super_secret_password_123"
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["하드코딩", "secret", "credential", "비밀", "키"]
+          description_keywords: ["하드코딩", "환경변수", "secret", "노출"]
+          issue_id: "exp-018"
+          rationale: "API 키와 DB 비밀번호가 코드에 하드코딩됨"
+      min_issues: 1
+      expected_risk: "high"
+      should_have_blockers: true
+
+  - id: "security-003"
+    metadata:
+      source: "synthetic"
+      difficulty: "medium"
+      primary_category: "security"
+      tags: ["path-traversal", "file-access"]
+      description: "Path Traversal 취약점"
+    input:
+      diff: |
+        diff --git a/api/file_handler.py b/api/file_handler.py
+        --- a/api/file_handler.py
+        +++ b/api/file_handler.py
+        @@ -15,6 +15,9 @@ class FileHandler:
+             def download_file(self, filename: str) -> bytes:
+        -        return b""
+        +        base_path = "/app/uploads"
+        +        file_path = os.path.join(base_path, filename)
+        +        with open(file_path, "rb") as f:
+        +            return f.read()
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["path", "traversal", "경로", "directory"]
+          description_keywords: ["../", "path", "traversal", "검증", "상위"]
+          issue_id: "exp-019"
+          rationale: "filename에 ../가 포함되면 상위 디렉토리 접근 가능"
+      min_issues: 1
+      expected_risk: "high"
+      should_have_blockers: true
+
+  - id: "security-004"
+    metadata:
+      source: "synthetic"
+      difficulty: "medium"
+      primary_category: "security"
+      tags: ["weak-crypto", "hashing"]
+      description: "취약한 해시 알고리즘 사용"
+    input:
+      diff: |
+        diff --git a/services/auth_service.py b/services/auth_service.py
+        --- a/services/auth_service.py
+        +++ b/services/auth_service.py
+        @@ -1,4 +1,5 @@
+         import hashlib
+        +import md5
+         from typing import Optional
+
+         class AuthService:
+        @@ -15,6 +16,8 @@ class AuthService:
+             def hash_password(self, password: str) -> str:
+        -        return hashlib.pbkdf2_hmac('sha256', password.encode(), self.salt, 100000).hex()
+        +        return hashlib.md5(password.encode()).hexdigest()
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["MD5", "해시", "hash", "취약", "weak"]
+          description_keywords: ["MD5", "bcrypt", "argon2", "pbkdf2", "취약"]
+          issue_id: "exp-020"
+          rationale: "비밀번호에 MD5 사용 - 솔트 없고 빠른 해시로 취약"
+      min_issues: 1
+      expected_risk: "high"
+      should_have_blockers: true
