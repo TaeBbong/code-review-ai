@@ -12,8 +12,9 @@ LLM 기반 자동 코드 리뷰 시스템의 백엔드입니다. Git diff를 분
 4. [데이터 흐름](#데이터-흐름)
 5. [Variant 시스템](#variant-시스템)
 6. [새로운 Variant 추가하기](#새로운-variant-추가하기)
-7. [환경 설정](#환경-설정)
-8. [실행 방법](#실행-방법)
+7. [성능 평가 시스템](#성능-평가-시스템)
+8. [환경 설정](#환경-설정)
+9. [실행 방법](#실행-방법)
 
 ---
 
@@ -66,6 +67,15 @@ backend/
 │       ├── g1_mapreduce.py      # 파일별 분할 + evidence 수집
 │       ├── g2_iterative.py      # 2-pass 오탐 필터링
 │       └── g3_multipersona.py   # 다중 관점 병렬 리뷰
+├── evaluation/                  # 성능 평가 시스템
+│   ├── schemas.py               # 평가 스키마 (EvalSample, SampleScore 등)
+│   ├── loader.py                # YAML 데이터셋 로더
+│   ├── scorer.py                # 매칭 및 스코어링 로직
+│   ├── evaluator.py             # 평가 실행기
+│   ├── langsmith_integration.py # LangSmith 연동
+│   ├── cli.py                   # CLI 스크립트
+│   └── datasets/                # 평가 데이터셋
+│       └── v1_initial.yaml      # 초기 데이터셋 (20개 샘플)
 ├── llm/
 │   ├── base.py                  # LLMAdapter ABC, AdapterChatModel
 │   ├── provider.py              # get_llm_adapter() 팩토리
@@ -639,6 +649,129 @@ curl -X POST http://localhost:8000/review \
 
 ---
 
+## 성능 평가 시스템
+
+Variant별 리뷰 품질을 측정하기 위한 평가 프레임워크입니다.
+
+### 평가 지표
+
+| 지표 | 설명 | 계산 방법 |
+|------|------|----------|
+| **Precision** | 발견한 이슈 중 실제 이슈 비율 | TP / (TP + FP) |
+| **Recall** | 실제 이슈 중 발견한 비율 | TP / (TP + FN) |
+| **F1 Score** | Precision-Recall 조화평균 | 2 × (P × R) / (P + R) |
+
+### 데이터셋 구조
+
+평가 데이터셋은 YAML 형식으로 `backend/evaluation/datasets/`에 저장됩니다:
+
+```yaml
+# v1_initial.yaml 예시
+samples:
+  - id: "correctness-001"
+    metadata:
+      primary_category: "correctness"
+      difficulty: "easy"
+      tags: ["null-check", "runtime-error"]
+    input:
+      diff: |
+        diff --git a/service.py b/service.py
+        ...
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["None", "null", "NoneType"]
+          description_keywords: ["체크", "null"]
+      min_issues: 1
+      max_issues: 3
+```
+
+**현재 데이터셋 (v1_initial):**
+| 카테고리 | 개수 | 예시 |
+|---------|------|------|
+| correctness | 6 | None 체크 누락, off-by-one, 타입 불일치 |
+| maintainability | 5 | 매직넘버, 코드중복, 중첩조건, SRP 위반 |
+| performance | 5 | N+1 쿼리, O(n²) 알고리즘, 메모리 과사용 |
+| security | 4 | SQL Injection, 하드코딩 시크릿, Path Traversal |
+
+### CLI 사용법
+
+```bash
+# 데이터셋 목록 확인
+uv run python -m backend.evaluation.cli list
+
+# 단일 variant 평가
+uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce
+
+# 여러 variant 비교
+uv run python -m backend.evaluation.cli compare v1_initial \
+    g0-baseline g1-mapreduce g2-iterative g3-multipersona
+
+# 결과를 JSON으로 저장
+uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce -o result.json
+```
+
+### 코드에서 사용
+
+```python
+from backend.evaluation import Evaluator, load_dataset_by_name
+from backend.pipelines.registry import get_pipeline
+from backend.domain.schemas.review import ReviewRequest
+
+# 데이터셋 로드
+dataset = load_dataset_by_name("v1_initial")
+evaluator = Evaluator(dataset=dataset)
+
+# 리뷰 함수 정의
+async def review_fn(diff: str, variant_id: str):
+    pipeline = get_pipeline(variant_id)
+    req = ReviewRequest(diff=diff, variant_id=variant_id)
+    return await pipeline.run(req)
+
+# 평가 실행
+result = await evaluator.run(
+    review_fn=review_fn,
+    variant_id="g1-mapreduce",
+    max_concurrency=4,
+)
+
+# 결과 확인
+print(f"Precision: {result.overall_precision:.2%}")
+print(f"Recall: {result.overall_recall:.2%}")
+print(f"F1 Score: {result.overall_f1:.2%}")
+```
+
+### 이슈 매칭 로직
+
+예상 이슈와 예측 이슈의 매칭 기준:
+
+1. **카테고리 일치** (필수)
+2. **심각도 >= 최소 심각도** (필수)
+3. **제목 키워드 포함** (OR 조건 - 하나라도 포함되면 OK)
+4. **설명 키워드 포함** (OR 조건)
+5. **파일 패턴 매칭** (선택적)
+6. **라인 번호 ±tolerance** (선택적, 기본 ±3)
+
+### LangSmith 연동 (선택적)
+
+LangSmith를 사용하면 실험 결과를 웹 UI에서 추적할 수 있습니다:
+
+```bash
+# 환경 변수 설정
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=lsv2_pt_xxxxx
+
+# 데이터셋 업로드
+uv run python -m backend.evaluation.cli upload v1_initial
+
+# LangSmith 실험 실행
+uv run python -m backend.evaluation.cli run-langsmith \
+    code-review-eval-v1_initial g1-mapreduce
+```
+
+---
+
 ## 환경 설정
 
 ### .env 파일 예시
@@ -752,3 +885,5 @@ curl -X POST http://localhost:8000/review \
 | 출력 스키마 변경 | `domain/schemas/review.py` 수정 |
 | diff 수집 방식 변경 | `domain/tools/git_diff.py` 확장 또는 파이프라인 hook 오버라이드 |
 | 후처리 로직 추가 | 파이프라인의 `after_run()` hook 오버라이드 |
+| 평가 데이터셋 추가 | `evaluation/datasets/`에 YAML 파일 추가 |
+| 평가 지표 추가 | `evaluation/scorer.py`에 새 evaluator 함수 추가 |
