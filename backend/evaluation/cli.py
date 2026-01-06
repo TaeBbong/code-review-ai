@@ -20,13 +20,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 from backend.evaluation.loader import load_dataset_by_name, list_available_datasets
 from backend.evaluation.evaluator import Evaluator
-from backend.evaluation.schemas import EvalRunResult, CategoryScore
+from backend.evaluation.schemas import EvalRunResult
 
 
 def print_result_summary(result: EvalRunResult) -> None:
@@ -99,7 +98,7 @@ async def cmd_upload(args: argparse.Namespace) -> None:
 
 async def cmd_run_local(args: argparse.Namespace) -> None:
     """Run local evaluation without LangSmith."""
-    from backend.pipelines.registry import get_pipeline
+    from backend.domain.services.review_service import ReviewService
     from backend.domain.schemas.review import ReviewRequest
 
     # Load dataset
@@ -109,11 +108,13 @@ async def cmd_run_local(args: argparse.Namespace) -> None:
     # Create evaluator
     evaluator = Evaluator(dataset=dataset)
 
+    # Create review service
+    review_service = ReviewService()
+
     # Create review function
     async def review_fn(diff: str, variant_id: str):
-        pipeline = get_pipeline(variant_id)
         req = ReviewRequest(diff=diff, variant_id=variant_id)
-        return await pipeline.run(req)
+        return await review_service.review(req)
 
     # Run evaluation
     print(f"Running evaluation with variant: {args.variant}")
@@ -156,12 +157,15 @@ async def cmd_run_langsmith(args: argparse.Namespace) -> None:
 
 async def cmd_compare(args: argparse.Namespace) -> None:
     """Compare multiple variants."""
-    from backend.pipelines.registry import get_pipeline
+    from backend.domain.services.review_service import ReviewService
     from backend.domain.schemas.review import ReviewRequest
 
     # Load dataset
     dataset = load_dataset_by_name(args.dataset)
     print(f"Loaded dataset: {dataset.name} ({len(dataset.samples)} samples)")
+
+    # Create review service (shared across variants)
+    review_service = ReviewService()
 
     results = []
 
@@ -173,9 +177,8 @@ async def cmd_compare(args: argparse.Namespace) -> None:
 
         # Create review function
         async def review_fn(diff: str, vid: str = variant_id):
-            pipeline = get_pipeline(vid)
             req = ReviewRequest(diff=diff, variant_id=vid)
-            return await pipeline.run(req)
+            return await review_service.review(req)
 
         # Run evaluation
         result = await evaluator.run(
@@ -200,7 +203,7 @@ async def cmd_compare(args: argparse.Namespace) -> None:
         print(f"Comparison saved to: {output_path}")
 
 
-async def cmd_list(args: argparse.Namespace) -> None:
+async def cmd_list(_: argparse.Namespace) -> None:
     """List available datasets."""
     datasets = list_available_datasets()
     print("\nAvailable datasets:")

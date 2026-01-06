@@ -716,18 +716,20 @@ uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce -o res
 
 ```python
 from backend.evaluation import Evaluator, load_dataset_by_name
-from backend.pipelines.registry import get_pipeline
+from backend.domain.services.review_service import ReviewService
 from backend.domain.schemas.review import ReviewRequest
 
 # 데이터셋 로드
 dataset = load_dataset_by_name("v1_initial")
 evaluator = Evaluator(dataset=dataset)
 
+# 리뷰 서비스 생성
+review_service = ReviewService()
+
 # 리뷰 함수 정의
 async def review_fn(diff: str, variant_id: str):
-    pipeline = get_pipeline(variant_id)
     req = ReviewRequest(diff=diff, variant_id=variant_id)
-    return await pipeline.run(req)
+    return await review_service.review(req)
 
 # 평가 실행
 result = await evaluator.run(
