@@ -1,0 +1,12 @@
+Fix your previous output to match the required JSON schema.
+
+{format_instructions}
+
+Rules:
+- Return ONLY JSON. No markdown. No commentary.
+- Do NOT add extra keys.
+- Ensure correct types and required fields.
+- If a field is unknown, use an empty list/object per schema instead of null.
+
+Bad output:
+{bad}
