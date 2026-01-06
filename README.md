@@ -38,6 +38,8 @@ backend/
 │   │       │   └── repair.user.txt
 │   │       ├── G1-mapreduce/
 │   │       │   └── ...
+│   │       ├── G2-iterative/
+│   │       │   └── ...
 │   │       └── G3-multipersona/
 │   │           └── ...
 │   ├── schemas/
@@ -57,10 +59,12 @@ backend/
 │   ├── presets/                 # Variant별 파이프라인 설정
 │   │   ├── g0-baseline.yaml
 │   │   ├── g1-mapreduce.yaml
+│   │   ├── g2-iterative.yaml
 │   │   └── g3-multipersona.yaml
 │   └── variants/                # 파이프라인 구현체
 │       ├── g0_baseline.py       # 단순 diff → LLM
 │       ├── g1_mapreduce.py      # 파일별 분할 + evidence 수집
+│       ├── g2_iterative.py      # 2-pass 오탐 필터링
 │       └── g3_multipersona.py   # 다중 관점 병렬 리뷰
 ├── llm/
 │   ├── base.py                  # LLMAdapter ABC, AdapterChatModel
@@ -416,6 +420,7 @@ Variant는 **프롬프트 팩 + 파이프라인**의 조합입니다.
 |------------|-------------|------------|------|
 | `g0-baseline` | `G0-baseline` | `BaselinePipeline` | 단순 diff → LLM → JSON |
 | `g1-mapreduce` | `G1-mapreduce` | `MapReducePipeline` | 파일별 분할 + ripgrep evidence 수집 |
+| `g2-iterative` | `G2-iterative` | `IterativeRefinementPipeline` | 2-pass 리뷰로 오탐 필터링 |
 | `g3-multipersona` | `G3-multipersona` | `MultiPersonaPipeline` | 다중 관점 병렬 리뷰 |
 
 #### G1-mapreduce 상세
@@ -443,6 +448,18 @@ params:
   max_symbols: 12          # 검색할 심볼 최대 개수
   top_k_per_symbol: 6      # 심볼당 레퍼런스 최대 개수
 ```
+
+#### G2-iterative 상세
+
+G2-iterative는 자기 검증을 통해 오탐(false positive)을 줄입니다:
+
+**동작 방식:**
+1. **1차 리뷰**: 포괄적으로 이슈 수집 (의심스러운 것도 포함)
+2. **2차 리뷰**: 1차 결과를 다시 검토하여 오탐 필터링
+3. **결과**: 검증된 이슈만 최종 출력
+
+**출력 특징:**
+- summary.key_points에 필터링 정보 추가: `Filtered N potential false positive(s) from initial M issue(s)`
 
 #### G3-multipersona 상세
 
@@ -483,7 +500,7 @@ params:
 운영 환경에서 특정 variant만 허용하려면:
 
 ```bash
-REVIEW_ALLOWED_VARIANTS_RAW="g0-baseline,g1-mapreduce,g3-multipersona"
+REVIEW_ALLOWED_VARIANTS_RAW="g0-baseline,g1-mapreduce,g2-iterative,g3-multipersona"
 ```
 
 허용되지 않은 variant 요청 시 기본 variant로 폴백됩니다.
