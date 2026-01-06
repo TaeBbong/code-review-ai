@@ -36,7 +36,9 @@ backend/
 │   │       │   ├── review.user.txt
 │   │       │   ├── repair.system.txt
 │   │       │   └── repair.user.txt
-│   │       └── G1-mapreduce/
+│   │       ├── G1-mapreduce/
+│   │       │   └── ...
+│   │       └── G3-multipersona/
 │   │           └── ...
 │   ├── schemas/
 │   │   ├── review.py            # Pydantic 스키마 (Request/Response)
@@ -54,10 +56,12 @@ backend/
 │   │   └── refs_builder.py      # evidence_pack.refs 빌더
 │   ├── presets/                 # Variant별 파이프라인 설정
 │   │   ├── g0-baseline.yaml
-│   │   └── g1-mapreduce.yaml
+│   │   ├── g1-mapreduce.yaml
+│   │   └── g3-multipersona.yaml
 │   └── variants/                # 파이프라인 구현체
 │       ├── g0_baseline.py       # 단순 diff → LLM
-│       └── g1_mapreduce.py      # 파일별 분할 + evidence 수집
+│       ├── g1_mapreduce.py      # 파일별 분할 + evidence 수집
+│       └── g3_multipersona.py   # 다중 관점 병렬 리뷰
 ├── llm/
 │   ├── base.py                  # LLMAdapter ABC, AdapterChatModel
 │   ├── provider.py              # get_llm_adapter() 팩토리
@@ -412,6 +416,7 @@ Variant는 **프롬프트 팩 + 파이프라인**의 조합입니다.
 |------------|-------------|------------|------|
 | `g0-baseline` | `G0-baseline` | `BaselinePipeline` | 단순 diff → LLM → JSON |
 | `g1-mapreduce` | `G1-mapreduce` | `MapReducePipeline` | 파일별 분할 + ripgrep evidence 수집 |
+| `g3-multipersona` | `G3-multipersona` | `MultiPersonaPipeline` | 다중 관점 병렬 리뷰 |
 
 #### G1-mapreduce 상세
 
@@ -439,6 +444,32 @@ params:
   top_k_per_symbol: 6      # 심볼당 레퍼런스 최대 개수
 ```
 
+#### G3-multipersona 상세
+
+G3-multipersona는 여러 관점의 리뷰어를 시뮬레이션합니다:
+
+**기본 페르소나 3종:**
+| 페르소나 | 집중 영역 |
+|---------|----------|
+| Security Reviewer | 보안 취약점, OWASP Top 10, injection 공격 |
+| Performance Reviewer | 성능 병목, N+1 쿼리, 알고리즘 복잡도 |
+| Maintainability Reviewer | 코드 복잡도, 네이밍, SOLID 원칙 |
+
+**동작 방식:**
+- 각 페르소나가 병렬로 diff를 리뷰 (최대 `max_concurrency`개 동시 실행)
+- 개별 리뷰 결과를 `reduce_persona_results()`로 병합
+- 이슈 카테고리에 페르소나 태그 추가: `[Security Reviewer] SQL Injection`
+
+```yaml
+# g3-multipersona.yaml 설정 예시
+params:
+  personas:              # 사용할 페르소나 목록
+    - security
+    - performance
+    - maintainability
+  max_concurrency: 3     # 병렬 LLM 호출 수
+```
+
 ### Variant 선택 우선순위
 
 1. 요청의 `variant_id` 파라미터
@@ -452,7 +483,7 @@ params:
 운영 환경에서 특정 variant만 허용하려면:
 
 ```bash
-REVIEW_ALLOWED_VARIANTS_RAW="g0-baseline,g1-mapreduce"
+REVIEW_ALLOWED_VARIANTS_RAW="g0-baseline,g1-mapreduce,g3-multipersona"
 ```
 
 허용되지 않은 variant 요청 시 기본 variant로 폴백됩니다.
