@@ -1,0 +1,13 @@
+Review the following git diff and output JSON that matches the schema.
+
+{format_instructions}
+
+variant_id: {variant_id}
+
+Constraints:
+- Find all potential issues (they will be validated later).
+- Include uncertain issues but mark them appropriately.
+- Keep issues concise (1-3 sentences each).
+
+## Git Diff
+{diff}

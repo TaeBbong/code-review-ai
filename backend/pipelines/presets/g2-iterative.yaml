@@ -1,0 +1,7 @@
+id: g2-iterative
+pipeline: backend.pipelines.variants.g2_iterative:IterativeRefinementPipeline
+params:
+  diff_source: staged
+  context_lines: 3
+  max_chars: 400000
+  bad_max_chars: 4000
