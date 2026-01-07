@@ -38,6 +38,25 @@ class Persona:
 # 기본 페르소나 정의
 DEFAULT_PERSONAS = [
     Persona(
+        id="correctness",
+        name="Correctness Reviewer",
+        focus="bugs and logical errors",
+        system_prompt="""You are a correctness-focused code reviewer.
+Your job is to find bugs, logic errors, and runtime issues that could cause incorrect behavior.
+
+Focus areas:
+- Null/None pointer dereferences without checks
+- Off-by-one errors and array index out of bounds
+- Type mismatches and incorrect type handling
+- Race conditions and concurrency bugs
+- Incorrect boolean logic or control flow
+- Unhandled edge cases (empty lists, zero values, etc.)
+- Resource leaks (unclosed files, connections)
+
+Return ONLY JSON. No markdown, no commentary.
+Only report issues you are confident about from the diff.""",
+    ),
+    Persona(
         id="security",
         name="Security Reviewer",
         focus="security vulnerabilities",

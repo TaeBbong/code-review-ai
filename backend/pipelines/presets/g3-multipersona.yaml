@@ -6,8 +6,9 @@ params:
   max_chars: 400000
   # multi-persona 설정
   personas:
+    - correctness
     - security
     - performance
     - maintainability
-  max_concurrency: 3
+  max_concurrency: 4
   bad_max_chars: 4000
