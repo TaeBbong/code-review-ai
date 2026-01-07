@@ -288,9 +288,10 @@ class MultiPersonaPipeline(ReviewPipeline):
         for persona, result in results:
             # 이슈에 페르소나 태그 추가
             for issue in result.issues:
-                # 카테고리에 페르소나 정보 추가
-                original_cat = issue.category or ""
-                issue.category = f"[{persona.name}] {original_cat}".strip()
+                # 카테고리는 원본 유지 (평가 매칭에 필요)
+                # 페르소나 정보는 title에 태그로 추가
+                original_title = issue.title or ""
+                issue.title = f"[{persona.name}] {original_title}".strip()
                 all_issues.append(issue)
 
             all_test_suggestions.extend(result.test_suggestions)
