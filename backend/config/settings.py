@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     temperature: float = 0.3
     max_tokens: int = 2048
+    use_structured_output: bool = False  # vLLM structured output 사용 여부
 
     review_default_variant: str = "G0-baseline"
     review_packs_dir: Path = Path("backend/domain/prompts/packs")
