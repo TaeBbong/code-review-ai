@@ -38,6 +38,7 @@ class DataSource(str, Enum):
     synthetic = "synthetic"      # 인위적으로 생성
     real_world = "real_world"    # 실제 PR에서 수집
     cve_based = "cve_based"      # CVE/보안 DB 기반
+    humanevalfix = "humanevalfix"  # HumanEvalFix 데이터셋
 
 
 # =============================================================================

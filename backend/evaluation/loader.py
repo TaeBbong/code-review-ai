@@ -157,6 +157,10 @@ def load_dataset_by_name(name: str) -> EvalDataset:
     """
     Load evaluation dataset by name from the datasets directory.
 
+    Supports both flat and subdirectory layouts:
+    - datasets/{name}.yaml (flat)
+    - datasets/{folder}/{name}.yaml (subdirectory)
+
     Args:
         name: Dataset name (without extension)
 
@@ -164,23 +168,32 @@ def load_dataset_by_name(name: str) -> EvalDataset:
         Parsed EvalDataset
     """
     datasets_dir = Path(__file__).parent / "datasets"
+
+    # Try flat layout first
     path = datasets_dir / f"{name}.yaml"
+    if path.exists():
+        return load_dataset(path)
 
-    if not path.exists():
-        raise FileNotFoundError(f"Dataset not found: {path}")
+    # Try subdirectory layout: datasets/**/{name}.yaml
+    matches = list(datasets_dir.glob(f"**/{name}.yaml"))
+    if matches:
+        return load_dataset(matches[0])
 
-    return load_dataset(path)
+    raise FileNotFoundError(f"Dataset not found: {name}")
 
 
 def list_available_datasets() -> list[str]:
     """
     List all available dataset names.
 
+    Scans both flat and subdirectory layouts.
+
     Returns:
         List of dataset names
     """
     datasets_dir = Path(__file__).parent / "datasets"
-    return [p.stem for p in datasets_dir.glob("*.yaml")]
+    # Find all YAML files including in subdirectories
+    return sorted(set(p.stem for p in datasets_dir.glob("**/*.yaml")))
 
 
 def filter_samples_by_category(
