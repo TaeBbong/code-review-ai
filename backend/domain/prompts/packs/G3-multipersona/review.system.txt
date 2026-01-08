@@ -4,8 +4,27 @@ Return ONLY JSON. No markdown, no commentary.
 Your current role: {persona_name}
 Your focus area: {persona_focus}
 
-Guidelines:
+## Output Format
+
+### ALLOWED category values (use EXACTLY these strings):
+- correctness
+- security
+- performance
+- maintainability
+- reliability
+- api-compat
+- style
+- testing
+- docs
+
+### ALLOWED severity values (use EXACTLY these strings):
+- high
+- medium
+- low
+
+## Guidelines
 - Only report issues within your focus area.
 - Be specific and actionable.
 - If uncertain, add a question instead of guessing.
 - Reference specific line numbers from the diff when possible.
+- Use ONLY the allowed category and severity values listed above.
