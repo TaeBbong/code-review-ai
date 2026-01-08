@@ -1,0 +1,5079 @@
+name: humanevalfix_python
+version: 1.0.0
+description: HumanEvalFix Python dataset - 164 samples converted from bigcode/humanevalpack
+samples:
+- id: humanevalfix-000
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/0: missing logic'
+    original_task_id: Python/0
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,7 +12,7 @@     for idx, elem in\
+      \ enumerate(numbers):\n         for idx2, elem2 in enumerate(numbers):\n   \
+      \          if idx != idx2:\n-                distance = abs(elem - elem2)\n\
+      +                distance = elem - elem2\n                 if distance < threshold:\n\
+      \                     return True\n \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: &id002
+      - missing
+      - incomplete
+      - forgot
+      - omit
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-000
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-001
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/1: operator misuse'
+    original_task_id: Python/1
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -21,7 +21,7 @@             current_depth\
+      \ -= 1\n             current_string.append(c)\n \n-            if current_depth\
+      \ == 0:\n+            if current_depth < 0:\n                 result.append(''.join(current_string))\n\
+      \                 current_string.clear()\n \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: &id001
+      - operator
+      - wrong
+      - incorrect
+      - '!='
+      - ==
+      - <
+      - '>'
+      - +
+      - '-'
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-001
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-002
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/2: excess logic'
+    original_task_id: Python/2
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,4 +9,4 @@     >>> truncate_number(3.5)\n\
+      \     0.5\n     \"\"\"\n-    return number % 1.0\n+    return number % 1.0 +\
+      \ 1.0\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: &id005
+      - extra
+      - unnecessary
+      - redundant
+      - excess
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-002
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-003
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/3: operator misuse'
+    original_task_id: Python/3
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,7 +14,7 @@ \n     for op in operations:\n\
+      \         balance += op\n-        if balance < 0:\n+        if balance == 0:\n\
+      \             return True\n \n     return False\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-003
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-004
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/4: variable misuse'
+    original_task_id: Python/4
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,4 +11,4 @@     1.0\n     \"\"\"\
+      \n     mean = sum(numbers) / len(numbers)\n-    return sum(abs(x - mean) for\
+      \ x in numbers) / len(numbers)\n+    return sum(abs(x - mean) for x in numbers)\
+      \ / mean\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: &id003
+      - variable
+      - wrong
+      - incorrect
+      - typo
+      - name
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-004
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-005
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/5: missing logic'
+    original_task_id: Python/5
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -17,6 +17,4 @@         result.append(n)\n\
+      \         result.append(delimeter)\n \n-    result.append(numbers[-1])\n-\n\
+      \     return result\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-005
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-006
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/6: variable misuse'
+    original_task_id: Python/6
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -17,7 +17,7 @@                 depth\
+      \ += 1\n                 max_depth = max(depth, max_depth)\n             else:\n\
+      -                depth -= 1\n+                max_depth -= 1\n \n         return\
+      \ max_depth\n \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-006
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-007
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/7: variable misuse'
+    original_task_id: Python/7
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -8,4 +8,4 @@     >>> filter_by_substring(['abc',\
+      \ 'bacd', 'cde', 'array'], 'a')\n     ['abc', 'bacd', 'array']\n     \"\"\"\n\
+      -    return [x for x in strings if substring in x]\n+    return [x for x in\
+      \ strings if x in substring]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-007
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-008
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/8: value misuse'
+    original_task_id: Python/8
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -10,7 +10,7 @@     (10, 24)\n    \
+      \ \"\"\"\n     sum_value = 0\n-    prod_value = 1\n+    prod_value = 0\n \n\
+      \     for n in numbers:\n         sum_value += n\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: &id004
+      - value
+      - wrong
+      - incorrect
+      - constant
+      - literal
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-008
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-009
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/9: variable misuse'
+    original_task_id: Python/9
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,7 +14,7 @@         if running_max\
+      \ is None:\n             running_max = n\n         else:\n-            running_max\
+      \ = max(running_max, n)\n+            running_max = max(numbers)\n \n      \
+      \   result.append(running_max)\n \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-009
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-010
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - stackoverflow
+    description: 'HumanEvalFix Python/10: missing logic'
+    original_task_id: Python/10
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -22,7 +22,7 @@ \n     beginning_of_suffix\
+      \ = 0\n \n-    while not is_palindrome(string[beginning_of_suffix:]):\n+   \
+      \ while not is_palindrome(string):\n         beginning_of_suffix += 1\n \n \
+      \    return string + string[:beginning_of_suffix][::-1]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - recursion
+      - stack
+      - overflow
+      - infinite
+      issue_id: exp-010
+      rationale: 'Bug type: missing logic, Symptom: stackoverflow'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-011
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/11: value misuse'
+    original_task_id: Python/11
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,8 +9,8 @@     \"\"\"\n     def\
+      \ xor(i, j):\n         if i == j:\n+            return '1'\n+        else:\n\
+      \             return '0'\n-        else:\n-            return '1'\n \n     return\
+      \ ''.join(xor(x, y) for x, y in zip(a, b))\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-011
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-012
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/12: operator misuse'
+    original_task_id: Python/12
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,5 +16,5 @@ \n     maxlen = max(len(x)\
+      \ for x in strings)\n     for s in strings:\n-        if len(s) == maxlen:\n\
+      +        if len(s) > maxlen:\n             return s\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-012
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-013
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/13: variable misuse'
+    original_task_id: Python/13
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,4 +9,4 @@     \"\"\"\n     while\
+      \ b:\n         a, b = b, a % b\n-    return a\n+    return b\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-013
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-014
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/14: excess logic'
+    original_task_id: Python/14
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -8,6 +8,6 @@     \"\"\"\n     result\
+      \ = []\n \n-    for i in range(len(string)):\n+    for i in range(len(string)-1):\n\
+      \         result.append(string[:i+1])\n     return result\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-014
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-015
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/15: value misuse'
+    original_task_id: Python/15
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -7,4 +7,4 @@     >>> string_sequence(5)\n\
+      \     '0 1 2 3 4 5'\n     \"\"\"\n-    return ' '.join([str(x) for x in range(n\
+      \ + 1)])\n+    return ' '.join([str(x) for x in range(n)])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-015
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-016
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/16: missing logic'
+    original_task_id: Python/16
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -7,4 +7,4 @@     >>> count_distinct_characters('Jerry')\n\
+      \     4\n     \"\"\"\n-    return len(set(string.lower()))\n+    return len(set(string))\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-016
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-017
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/17: value misuse'
+    original_task_id: Python/17
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,5 +14,5 @@     >>> parse_music('o\
+      \ o| .| o| o| .| .| .| .| o o')\n     [4, 2, 1, 2, 2, 1, 1, 1, 1, 4, 4]\n  \
+      \   \"\"\"\n-    note_map = {'o': 4, 'o|': 2, '.|': 1}\n+    note_map = {'o':\
+      \ 3, 'o|': 2, '.|': 1}\n     return [note_map[x] for x in music_string.split('\
+      \ ') if x]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-017
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-018
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/18: value misuse'
+    original_task_id: Python/18
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,7 +11,7 @@     \"\"\"\n     times\
+      \ = 0\n \n-    for i in range(len(string) - len(substring) + 1):\n+    for i\
+      \ in range(len(string) - len(substring)):\n         if string[i:i+len(substring)]\
+      \ == substring:\n             times += 1\n \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-018
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-019
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/19: missing logic'
+    original_task_id: Python/19
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -20,4 +20,4 @@         'eight': 8,\n\
+      \         'nine': 9\n     }\n-    return ' '.join(sorted([x for x in numbers.split('\
+      \ ') if x], key=lambda x: value_map[x]))\n+    return ' '.join([x for x in numbers.split('\
+      \ ') if x])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-019
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-020
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/20: operator misuse'
+    original_task_id: Python/20
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -20,7 +20,7 @@                   \
+      \  closest_pair = tuple(sorted([elem, elem2]))\n                 else:\n   \
+      \                  new_distance = abs(elem - elem2)\n-                    if\
+      \ new_distance < distance:\n+                    if new_distance > distance:\n\
+      \                         distance = new_distance\n                        \
+      \ closest_pair = tuple(sorted([elem, elem2]))\n \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-020
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-021
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/21: operator misuse'
+    original_task_id: Python/21
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,4 +9,4 @@     \"\"\"\n     min_number\
+      \ = min(numbers)\n     max_number = max(numbers)\n-    return [(x - min_number)\
+      \ / (max_number - min_number) for x in numbers]\n+    return [(x - min_number)\
+      \ / (max_number + min_number) for x in numbers]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-021
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-022
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/22: variable misuse'
+    original_task_id: Python/22
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -8,4 +8,5 @@     >>> filter_integers([1,\
+      \ 2, 3, 'abc', {}, []])\n     [1, 2, 3]\n     \"\"\"\n-    return [x for x in\
+      \ values if isinstance(x, int)]\n+    out = [x for x in values if isinstance(x,\
+      \ int)]\n+    return values\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-022
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-023
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/23: value misuse'
+    original_task_id: Python/23
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -7,4 +7,4 @@     >>> strlen('abc')\n\
+      \     3\n     \"\"\"\n-    return len(string)\n+    return len(string) - 1\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-023
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-024
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/24: operator misuse'
+    original_task_id: Python/24
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -6,5 +6,5 @@     5\n     \"\"\"\n\
+      \     for i in reversed(range(n)):\n-        if n % i == 0:\n+        if n -\
+      \ i == 0:\n             return i\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-024
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-025
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/25: value misuse'
+    original_task_id: Python/25
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,7 +14,7 @@     \"\"\"\n     import\
+      \ math\n     fact = []\n-    i = 2\n+    i = 0\n     while i <= int(math.sqrt(n)\
+      \ + 1):\n         if n % i == 0:\n             fact.append(i)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-025
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-026
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/26: operator misuse'
+    original_task_id: Python/26
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,4 +9,4 @@     \"\"\"\n     import\
+      \ collections\n     c = collections.Counter(numbers)\n-    return [n for n in\
+      \ numbers if c[n] <= 1]\n+    return [n for n in numbers if c[n] < 1]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-026
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-027
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - function-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/27: function misuse'
+    original_task_id: Python/27
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -5,4 +5,4 @@     >>> flip_case('Hello')\n\
+      \     'hELLO'\n     \"\"\"\n-    return string.swapcase()\n+    return string.lower()\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: &id006
+      - function
+      - method
+      - call
+      - wrong
+      - incorrect
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-027
+      rationale: 'Bug type: function misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-028
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/28: excess logic'
+    original_task_id: Python/28
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -8,4 +8,4 @@     >>> concatenate(['a',\
+      \ 'b', 'c'])\n     'abc'\n     \"\"\"\n-    return ''.join(strings)\n+    return\
+      \ ' '.join(strings)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-028
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-029
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - function-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/29: function misuse'
+    original_task_id: Python/29
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -8,4 +8,4 @@     >>> filter_by_prefix(['abc',\
+      \ 'bcd', 'cde', 'array'], 'a')\n     ['abc', 'array']\n     \"\"\"\n-    return\
+      \ [x for x in strings if x.startswith(prefix)]\n+    return [x for x in strings\
+      \ if x.endswith(prefix)]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id006
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-029
+      rationale: 'Bug type: function misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-030
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/30: operator misuse'
+    original_task_id: Python/30
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -7,4 +7,4 @@     >>> get_positive([5,\
+      \ 3, -5, 2, -3, 3, 9, 0, 123, 1, -10])\n     [5, 3, 2, 3, 9, 123, 1]\n     \"\
+      \"\"\n-    return [e for e in l if e > 0]\n+    return [e for e in l if e <\
+      \ 0]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-030
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-031
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/31: value misuse'
+    original_task_id: Python/31
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -17,9 +17,9 @@     >>> is_prime(1)\n\
+      \     False\n     \"\"\"\n-    if n < 2:\n+    if n < 1:\n         return False\n\
+      -    for k in range(2, n - 1):\n+    for k in range(1, n - 1):\n         if\
+      \ n % k == 0:\n             return False\n     return True\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-031
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-032
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/32: variable misuse'
+    original_task_id: Python/32
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -25,7 +25,7 @@     while poly(xs,\
+      \ begin) * poly(xs, end) > 0:\n         begin *= 2.0\n         end *= 2.0\n\
+      -    while end - begin > 1e-10:\n+    while begin - end > 1e-10:\n         center\
+      \ = (begin + end) / 2.0\n         if poly(xs, center) * poly(xs, begin) > 0:\n\
+      \             begin = center\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-032
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-033
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/33: missing logic'
+    original_task_id: Python/33
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -10,5 +10,4 @@     [2, 6, 3, 4, 8,\
+      \ 9, 5]\n     \"\"\"\n     l = list(l)\n-    l[::3] = sorted(l[::3])\n     return\
+      \ l\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-033
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-034
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/34: missing logic'
+    original_task_id: Python/34
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -5,4 +5,4 @@     >>> unique([5, 3,\
+      \ 5, 2, 3, 3, 9, 0, 123])\n     [0, 2, 3, 5, 9, 123]\n     \"\"\"\n-    return\
+      \ sorted(list(set(l)))\n+    return sorted(l)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-034
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-035
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/35: operator misuse'
+    original_task_id: Python/35
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,6 +9,6 @@     \"\"\"\n     m =\
+      \ l[0]\n     for e in l:\n-        if e > m:\n+        if e < m:\n         \
+      \    m = e\n     return m\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-035
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-036
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/36: operator misuse'
+    original_task_id: Python/36
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,7 +11,7 @@     \"\"\"\n     ns\
+      \ = []\n     for i in range(n):\n-        if i % 11 == 0 or i % 13 == 0:\n+\
+      \        if i % 11 == 0 and i % 13 == 0:\n             ns.append(i)\n     s\
+      \ = ''.join(list(map(str, ns)))\n     ans = 0\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-036
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-037
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/37: variable misuse'
+    original_task_id: Python/37
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,7 +11,7 @@     \"\"\"\n     evens\
+      \ = l[::2]\n     odds = l[1::2]\n-    evens.sort()\n+    odds.sort()\n     ans\
+      \ = []\n     for e, o in zip(evens, odds):\n         ans.extend([e, o])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-037
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-038
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/38: missing logic'
+    original_task_id: Python/38
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,4 +15,4 @@     \"\"\"\n     takes\
+      \ as input string encoded with encode_cyclic function. Returns decoded string.\n\
+      \     \"\"\"\n-    return encode_cyclic(encode_cyclic(s))\n+    return encode_cyclic(s)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-038
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-039
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/39: value misuse'
+    original_task_id: Python/39
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -19,7 +19,7 @@     def is_prime(p):\n\
+      \         if p < 2:\n             return False\n-        for k in range(2, min(int(math.sqrt(p))\
+      \ + 1, p - 1)):\n+        for k in range(2, min(int(math.sqrt(p)), p)):\n  \
+      \           if p % k == 0:\n                 return False\n         return True\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-039
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-040
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/40: value misuse'
+    original_task_id: Python/40
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -17,7 +17,7 @@     >>> triples_sum_to_zero([1])\n\
+      \     False\n     \"\"\"\n-    for i in range(len(l)):\n+    for i in range(1,\
+      \ len(l)):\n         for j in range(i + 1, len(l)):\n             for k in range(j\
+      \ + 1, len(l)):\n                 if l[i] + l[j] + l[k] == 0:\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-040
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-041
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/41: value misuse'
+    original_task_id: Python/41
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,4 +12,4 @@ \n     This function\
+      \ outputs the number of such collisions.\n     \"\"\"\n-    return n**2\n+ \
+      \   return n**3\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-041
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-042
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/42: value misuse'
+    original_task_id: Python/42
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -7,4 +7,4 @@     >>> incr_list([5,\
+      \ 3, 5, 2, 3, 3, 9, 0, 123])\n     [6, 4, 6, 3, 4, 4, 10, 1, 124]\n     \"\"\
+      \"\n-    return [(e + 1) for e in l]\n+    return [(e + 2) for e in l]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-042
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-043
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/43: value misuse'
+    original_task_id: Python/43
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -17,7 +17,7 @@     False\n     \"\"\
+      \"\n     for i, l1 in enumerate(l):\n-        for j in range(i + 1, len(l)):\n\
+      +        for j in range(i, len(l)):\n             if l1 + l[j] == 0:\n     \
+      \            return True\n     return False\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-043
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-044
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - infinite-loop
+    description: 'HumanEvalFix Python/44: operator misuse'
+    original_task_id: Python/44
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,5 +14,5 @@     ret = \"\"\n  \
+      \   while x > 0:\n         ret = str(x % base) + ret\n-        x //= base\n\
+      +        x -= base\n     return ret\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      issue_id: exp-044
+      rationale: 'Bug type: operator misuse, Symptom: infinite loop'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-045
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/45: value misuse'
+    original_task_id: Python/45
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -5,4 +5,4 @@     >>> triangle_area(5,\
+      \ 3)\n     7.5\n     \"\"\"\n-    return a * h / 2.0\n+    return a * h / 0.5\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-045
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-046
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/46: value misuse'
+    original_task_id: Python/46
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -23,4 +23,4 @@         results.append(results[-1]\
+      \ + results[-2] + results[-3] + results[-4])\n         results.pop(0)\n \n-\
+      \    return results[-1]\n+    return results[-2]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-046
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-047
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/47: value misuse'
+    original_task_id: Python/47
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,4 +11,4 @@     if len(l) % 2 ==\
+      \ 1:\n         return l[len(l) // 2]\n     else:\n-        return (l[len(l)\
+      \ // 2 - 1] + l[len(l) // 2]) / 2.0\n+        return (l[len(l) - 1 // 2] + l[len(l)\
+      \ // 2]) / 2.0\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-047
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-048
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/48: value misuse'
+    original_task_id: Python/48
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,6 +13,6 @@     False\n     \"\"\
+      \"\n     for i in range(len(text)):\n-        if text[i] != text[len(text) -\
+      \ 1 - i]:\n+        if text[i] != text[len(text) - i]:\n             return\
+      \ False\n     return True\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-048
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-049
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/49: value misuse'
+    original_task_id: Python/49
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,7 +13,7 @@     >>> modp(100, 101)\n\
+      \     1\n     \"\"\"\n-    ret = 1\n+    ret = 0\n     for i in range(n):\n\
+      \         ret = (2 * ret) % p\n     return ret\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-049
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-050
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/50: variable misuse'
+    original_task_id: Python/50
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,4 +11,4 @@     \"\"\"\n     takes\
+      \ as input string encoded with encode_shift function. Returns decoded string.\n\
+      \     \"\"\"\n-    return \"\".join([chr(((ord(ch) - 5 - ord(\"a\")) % 26) +\
+      \ ord(\"a\")) for ch in s])\n+    return \"\".join([chr(((ord(ch) - 5 - ord(\"\
+      a\")) % 26) + ord(ch)) for ch in s])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-050
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-051
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/51: excess logic'
+    original_task_id: Python/51
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,4 +16,4 @@     >>> remove_vowels('zbcd')\n\
+      \     'zbcd'\n     \"\"\"\n-    return \"\".join([s for s in text if s.lower()\
+      \ not in [\"a\", \"e\", \"i\", \"o\", \"u\"]])\n+    return \"\".join([s for\
+      \ s in text if s.lower() not in [\"a\", \"e\", \"i\", \"o\", \"u\", \"w\", \"\
+      y\"]])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-051
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-052
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/52: operator misuse'
+    original_task_id: Python/52
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,5 +9,5 @@     \"\"\"\n     for\
+      \ e in l:\n         if e >= t:\n-            return False\n-    return True\n\
+      +            return True\n+    return False\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-052
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-053
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/53: excess logic'
+    original_task_id: Python/53
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -7,4 +7,4 @@     >>> add(5, 7)\n \
+      \    12\n     \"\"\"\n-    return x + y\n+    return x + y + y + x\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-053
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-054
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/54: missing logic'
+    original_task_id: Python/54
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,4 +16,4 @@     >>> same_chars('eabcdzzzz',\
+      \ 'dddzzzzzzzddddabc')\n     False\n     \"\"\"\n-    return set(s0) == set(s1)\n\
+      +    return s0 == s1\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-054
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-055
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/55: excess logic'
+    original_task_id: Python/55
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,4 +13,6 @@         return 0\n\
+      \     if n == 1:\n         return 1\n+    if n == 2:\n+        return 2\n  \
+      \   return fib(n - 1) + fib(n - 2)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-055
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-056
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/56: operator misuse'
+    original_task_id: Python/56
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,7 +15,7 @@     \"\"\"\n     depth\
+      \ = 0\n     for b in brackets:\n-        if b == \"<\":\n+        if b == \"\
+      >\":\n             depth += 1\n         else:\n             depth -= 1\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-056
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-057
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/57: operator misuse'
+    original_task_id: Python/57
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -10,5 +10,5 @@     True\n     \"\"\
+      \"\n     if l == sorted(l) or l == sorted(l, reverse=True):\n-        return\
+      \ True\n-    return False\n+        return False\n+    return True\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-057
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-058
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/58: missing logic'
+    original_task_id: Python/58
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,6 +11,5 @@     ret = set()\n \
+      \    for e1 in l1:\n         for e2 in l2:\n-            if e1 == e2:\n-   \
+      \             ret.add(e1)\n+            ret.add(e1)\n     return sorted(list(ret))\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-058
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-059
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/59: variable misuse'
+    original_task_id: Python/59
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,6 +16,6 @@         return True\n\
+      \     largest = 1\n     for j in range(2, n + 1):\n-        if n % j == 0 and\
+      \ is_prime(j):\n+        if n % j == 0 and is_prime(n):\n             largest\
+      \ = max(largest, j)\n     return largest\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-059
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-060
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/60: value misuse'
+    original_task_id: Python/60
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,4 +13,4 @@     >>> sum_to_n(1)\n\
+      \     1\n     \"\"\"\n-    return sum(range(n + 1))\n+    return sum(range(n))\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-060
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-061
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/61: operator misuse'
+    original_task_id: Python/61
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -20,5 +20,5 @@         else:\n   \
+      \          depth -= 1\n         if depth < 0:\n-            return False\n+\
+      \            return True\n     return depth == 0\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-061
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-062
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/62: value misuse'
+    original_task_id: Python/62
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,4 +9,4 @@     >>> derivative([1,\
+      \ 2, 3])\n     [2, 6]\n     \"\"\"\n-    return [(i * x) for i, x in enumerate(xs)][1:]\n\
+      +    return [(i * x) for i, x in enumerate(xs)]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-062
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-063
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/63: value misuse'
+    original_task_id: Python/63
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -17,7 +17,7 @@     if n == 0:\n  \
+      \       return 0\n     if n == 1:\n-        return 0\n+        return 1\n  \
+      \   if n == 2:\n-        return 1\n+        return 2\n     return fibfib(n -\
+      \ 1) + fibfib(n - 2) + fibfib(n - 3)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-063
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-064
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/64: missing logic'
+    original_task_id: Python/64
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,8 +15,6 @@     >>> vowels_count(\"\
+      ACEDY\")\n     3\n     \"\"\"\n-    vowels = \"aeiouAEIOU\"\n+    vowels = \"\
+      aeiouyAEIOUY\"\n     n_vowels = sum(c in vowels for c in s)\n-    if s[-1] ==\
+      \ 'y' or s[-1] == 'Y':\n-        n_vowels += 1\n     return n_vowels\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-064
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-065
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/65: variable misuse'
+    original_task_id: Python/65
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,4 +12,4 @@     if shift > len(s):\n\
+      \         return s[::-1]\n     else:\n-        return s[len(s) - shift:] + s[:len(s)\
+      \ - shift]\n+        return s[:len(s) - shift] + s[len(s) - shift:]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-065
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-066
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - function-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/66: function misuse'
+    original_task_id: Python/66
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,4 +13,4 @@         digitSum(\"\
+      aAaaaXa\") => 153\n     \"\"\"\n     if s == \"\": return 0\n-    return sum(ord(char)\
+      \ if char.isupper() else 0 for char in s)\n+    return sum(ord(char) if char.islower()\
+      \ else 0 for char in s)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id006
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-066
+      rationale: 'Bug type: function misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-067
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/67: value misuse'
+    original_task_id: Python/67
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,4 +16,4 @@     for i in s.split('\
+      \ '):\n         if i.isdigit():\n             lis.append(int(i))\n-    return\
+      \ n - sum(lis)\n+    return n - sum(lis) - 1\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-067
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-068
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/68: variable misuse'
+    original_task_id: Python/68
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -36,4 +36,4 @@     if(len(arr) ==\
+      \ 0): return []\n     evens = list(filter(lambda x: x%2 == 0, arr))\n     if(evens\
+      \ == []): return []\n-    return [min(evens), arr.index(min(evens))]\n+    return\
+      \ [arr.index(min(evens)), min(evens)]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-068
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-069
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/69: value misuse'
+    original_task_id: Python/69
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,7 +14,7 @@     for i in lst:\n\
+      \         frq[i] += 1;\n \n-    ans = -1\n+    ans = 0\n     for i in range(1,\
+      \ len(frq)):\n         if frq[i] >= i:\n             ans = i\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-069
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-070
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/70: operator misuse'
+    original_task_id: Python/70
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -10,7 +10,7 @@     strange_sort_list([5,\
+      \ 5, 5, 5]) == [5, 5, 5, 5]\n     strange_sort_list([]) == []\n     '''\n- \
+      \   res, switch = [], True\n+    res, switch = [], False\n     while lst:\n\
+      \         res.append(min(lst) if switch else max(lst))\n         lst.remove(res[-1])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-070
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-071
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/71: missing logic'
+    original_task_id: Python/71
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,7 +12,7 @@     '''\n     if a\
+      \ + b <= c or a + c <= b or b + c <= a:\n         return -1 \n-    s = (a +\
+      \ b + c)/2    \n+    s = (a + b + c)    \n     area = (s * (s - a) * (s - b)\
+      \ * (s - c)) ** 0.5\n     area = round(area, 2)\n     return area\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-071
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-072
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/72: operator misuse'
+    original_task_id: Python/72
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -22,7 +22,7 @@ \n     i, j = 0, len(q)-1\n\
+      \     while i<j:\n-        if q[i] != q[j]:\n+        if q[i] == q[j]:\n   \
+      \          return False\n         i+=1\n         j-=1\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-072
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-073
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/73: variable misuse'
+    original_task_id: Python/73
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,6 +12,6 @@     \"\"\"\n     ans\
+      \ = 0\n     for i in range(len(arr) // 2):\n-        if arr[i] != arr[len(arr)\
+      \ - i - 1]:\n+        if ans != arr[len(arr) - i - 1]:\n             ans +=\
+      \ 1\n     return ans\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-073
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-074
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/74: variable misuse'
+    original_task_id: Python/74
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -22,6 +22,6 @@         l2 += len(st)\n\
+      \     \n     if l1 <= l2:\n+        return lst2\n+    else:\n         return\
+      \ lst1\n-    else:\n-        return lst2\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-074
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-075
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/75: value misuse'
+    original_task_id: Python/75
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -8,7 +8,7 @@     30 = 2 * 3 * 5\n\
+      \     \"\"\"\n     def is_prime(n):\n-        for j in range(2,n):\n+      \
+      \  for j in range(0,n):\n             if n%j == 0:\n                 return\
+      \ False\n         return True\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-075
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-076
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - infinite-loop
+    description: 'HumanEvalFix Python/76: variable misuse'
+    original_task_id: Python/76
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,6 +14,6 @@     if (n == 1): \n\
+      \         return (x == 1) \n     power = 1\n-    while (power < x): \n+    while\
+      \ (n < x): \n         power = power * n \n     return (power == x) \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      issue_id: exp-076
+      rationale: 'Bug type: variable misuse, Symptom: infinite loop'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-077
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/77: missing logic'
+    original_task_id: Python/77
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,4 +13,4 @@     iscube(180) ==>\
+      \ False\n     '''\n     a = abs(a)\n-    return int(round(a ** (1. / 3))) **\
+      \ 3 == a\n+    return int(round(a ** (1. / 3))) == a\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-077
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-078
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/78: value misuse'
+    original_task_id: Python/78
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -18,7 +18,7 @@     For num = \"2020\"\
+      \ the output should be 2.\n     \"\"\"\n     primes = ('2', '3', '5', '7', 'B',\
+      \ 'D')\n-    total = 0\n+    total = 1\n     for i in range(0, len(num)):\n\
+      \         if num[i] in primes:\n             total += 1\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-078
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-079
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/79: missing logic'
+    original_task_id: Python/79
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,4 +11,4 @@     decimal_to_binary(15)\
+      \   # returns \"db1111db\"\n     decimal_to_binary(32)   # returns \"db100000db\"\
+      \n     \"\"\"\n-    return \"db\" + bin(decimal)[2:] + \"db\"\n+    return \"\
+      db\" + bin(decimal)[2:] + \"d\"\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-079
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-080
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/80: operator misuse'
+    original_task_id: Python/80
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,6 +16,6 @@ \n     for i in range(len(s)\
+      \ - 2):\n       \n-      if s[i] == s[i+1] or s[i+1] == s[i+2] or s[i] == s[i+2]:\n\
+      +      if s[i] == s[i+1] and s[i+1] == s[i+2] and s[i] == s[i+2]:\n        \
+      \ return False\n     return True\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-080
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-081
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/81: excess logic'
+    original_task_id: Python/81
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -53,5 +53,5 @@         elif gpa >\
+      \ 0.0:\n             letter_grade.append(\"D-\")\n         else:\n-        \
+      \    letter_grade.append(\"E\")\n+            letter_grade.append(\"E+\")\n\
+      \     return letter_grade\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-081
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-082
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/82: value misuse'
+    original_task_id: Python/82
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,7 +11,7 @@     l = len(string)\n\
+      \     if l == 0 or l == 1:\n         return False\n-    for i in range(2, l):\n\
+      +    for i in range(3, l):\n         if l % i == 0:\n             return False\n\
+      \     return True\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-082
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-083
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/83: excess logic'
+    original_task_id: Python/83
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -5,4 +5,4 @@     positive integers\
+      \ that start or end with 1.\n     \"\"\"\n     if n == 1: return 1\n-    return\
+      \ 18 * (10 ** (n - 2))\n+    return 18 * n * (10 ** (n - 2))\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-083
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-084
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/84: operator misuse'
+    original_task_id: Python/84
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,4 +13,4 @@     Output:\n     \
+      \     a string of binary number\n     \"\"\"\n-    return bin(sum(int(i) for\
+      \ i in str(N)))[2:]\n+    return bin([int(i) for i in str(N)][-1])[2:]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-084
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-085
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/85: value misuse'
+    original_task_id: Python/85
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -6,4 +6,4 @@     Examples:\n     \
+      \    add([4, 2, 6, 7]) ==> 2 \n     \"\"\"\n-    return sum([lst[i] for i in\
+      \ range(1, len(lst), 2) if lst[i]%2 == 0])\n+    return sum([lst[i] for i in\
+      \ range(1, len(lst), 1) if lst[i]%2 == 0])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-085
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-086
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/86: missing logic'
+    original_task_id: Python/86
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,4 +12,4 @@     anti_shuffle('hello')\
+      \ returns 'ehllo'\n     anti_shuffle('Hello World!!!') returns 'Hello !!!Wdlor'\n\
+      \     \"\"\"\n-    return ' '.join([''.join(sorted(list(i))) for i in s.split('\
+      \ ')])\n+    return ''.join([''.join(sorted(list(i))) for i in s.split(' ')])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-086
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-087
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/87: variable misuse'
+    original_task_id: Python/87
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -19,5 +19,5 @@     get_row([], 1)\
+      \ == []\n     get_row([[], [1], [1, 2, 3]], 3) == [(2, 2)]\n     \"\"\"\n- \
+      \   coords = [(i, j) for i in range(len(lst)) for j in range(len(lst[i])) if\
+      \ lst[i][j] == x]\n+    coords = [(j, i) for i in range(len(lst)) for j in range(len(lst[i]))\
+      \ if lst[i][j] == x]\n     return sorted(sorted(coords, key=lambda x: x[1],\
+      \ reverse=True), key=lambda x: x[0])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-087
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-088
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/88: operator misuse'
+    original_task_id: Python/88
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,4 +14,4 @@     * sort_array([2,\
+      \ 4, 3, 0, 1, 5]) => [0, 1, 2, 3, 4, 5]\n     * sort_array([2, 4, 3, 0, 1, 5,\
+      \ 6]) => [6, 5, 4, 3, 2, 1, 0]\n     \"\"\"\n-    return [] if len(array) ==\
+      \ 0 else sorted(array, reverse= (array[0]+array[-1]) % 2 == 0) \n+    return\
+      \ [] if len(array) == 0 else sorted(array, reverse= (array[0]+array[-1]) % 2\
+      \ != 0) \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-088
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-089
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/89: value misuse'
+    original_task_id: Python/89
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,7 +14,7 @@     out = ''\n    \
+      \ for c in s:\n         if c in d:\n-            out += d[(d.index(c)+2*2) %\
+      \ 26]\n+            out += d[(d.index(c)+2*2) % 24]\n         else:\n      \
+      \       out += c\n     return out\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-089
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-090
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/90: value misuse'
+    original_task_id: Python/90
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,4 +11,4 @@     next_smallest([1,\
+      \ 1]) == None\n     \"\"\"\n     lst = sorted(set(lst))\n-    return None if\
+      \ len(lst) < 2 else lst[1]\n+    return None if len(lst) < 3 else lst[1]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-090
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-091
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/91: value misuse'
+    original_task_id: Python/91
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,4 +13,4 @@     \"\"\"\n     import\
+      \ re\n     sentences = re.split(r'[.?!]\\s*', S)\n-    return sum(sentence[0:2]\
+      \ == 'I ' for sentence in sentences)\n+    return sum(sentence[0:2] == ' I'\
+      \ for sentence in sentences)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-091
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-092
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/92: missing logic'
+    original_task_id: Python/92
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -19,7 +19,7 @@     '''\n     \n  \
+      \   if isinstance(x,int) and isinstance(y,int) and isinstance(z,int):\n-   \
+      \     if (x+y==z) or (x+z==y) or (y+z==x):\n+        if (x+y==z) or (y+z==x):\n\
+      \             return True\n         return False\n     return False\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-092
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-093
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/93: missing logic'
+    original_task_id: Python/93
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,7 +13,7 @@     >>> encode('This\
+      \ is a message')\n     'tHKS KS C MGSSCGG'\n     \"\"\"\n-    vowels = \"aeiouAEIOU\"\
+      \n+    vowels = \"aeiou\"\n     vowels_replace = dict([(i, chr(ord(i) + 2))\
+      \ for i in vowels])\n     message = message.swapcase()\n     return ''.join([vowels_replace[i]\
+      \ if i in vowels else i for i in message])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-093
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-094
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/94: operator misuse'
+    original_task_id: Python/94
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,9 +15,9 @@     def isPrime(n):\n\
+      \         for i in range(2,int(n**0.5)+1):\n             if n%i==0:\n-     \
+      \           return False\n+                return True\n \n-        return True\n\
+      +        return False\n     maxx = 0\n     i = 0\n     while i < len(lst):\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-094
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-095
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/95: operator misuse'
+    original_task_id: Python/95
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -27,7 +27,7 @@                   \
+      \  state = \"lower\"\n                 else:\n                     break\n-\
+      \            elif (state == \"upper\" and not key.isupper()) or (state == \"\
+      lower\" and not key.islower()):\n+            elif (state == \"upper\" and not\
+      \ key.isupper()) and (state == \"lower\" and not key.islower()):\n         \
+      \            state = \"mixed\"\n                     break\n             else:\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-095
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-096
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/96: variable misuse'
+    original_task_id: Python/96
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,7 +14,7 @@     for i in range(2,\
+      \ n):\n         is_prime = True\n         for j in range(2, i):\n-         \
+      \   if i % j == 0:\n+            if j % i == 0:\n                 is_prime =\
+      \ False\n                 break\n         if is_prime:\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-096
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-097
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/97: excess logic'
+    original_task_id: Python/97
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,4 +9,4 @@     multiply(2020, 1851)\
+      \ should return 0.\n     multiply(14,-15) should return 20.\n     \"\"\"\n-\
+      \    return abs(a % 10) * abs(b % 10)\n+    return abs(a % 10) * abs(b % 10)\
+      \ * a * b\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-097
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-098
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/98: value misuse'
+    original_task_id: Python/98
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,5 +11,5 @@     count = 0\n   \
+      \  for i in range(0,len(s),2):\n         if s[i] in \"AEIOU\":\n-          \
+      \  count += 1\n+            count += 2\n     return count\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-098
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-099
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - function-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/99: function misuse'
+    original_task_id: Python/99
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -27,9 +27,9 @@     num = float(value)\n\
+      \     if value[-2:] == '.5':\n         if num > 0:\n+            res = floor(num)\n\
+      +        else:\n             res = ceil(num)\n-        else:\n-            res\
+      \ = floor(num)\n     elif len(value) > 0:\n         res = int(round(num))\n\
+      \     else:\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id006
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-099
+      rationale: 'Bug type: function misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-100
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/100: excess logic'
+    original_task_id: Python/100
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,4 +13,4 @@     >>> make_a_pile(3)\n\
+      \     [3, 5, 7]\n     \"\"\"\n-    return [n + 2*i for i in range(n)]\n+   \
+      \ return [n + 2*i + i for i in range(n)]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-100
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-101
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/101: value misuse'
+    original_task_id: Python/101
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,7 +15,7 @@ \n     for letter in\
+      \ s:\n         if letter == ',':\n-            s_list.append(' ')\n+       \
+      \     s_list.append(',')\n         else:\n             s_list.append(letter)\n\
+      \ \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-101
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-102
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/102: variable misuse'
+    original_task_id: Python/102
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,4 +14,4 @@         return y\n\
+      \     if x == y:\n         return -1\n-    return y - 1\n+    return x - 1\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-102
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-103
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/103: value misuse'
+    original_task_id: Python/103
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,4 +15,4 @@     summation = 0\n\
+      \     for i in range(n, m+1):\n         summation += i\n-    return bin(round(summation/(m\
+      \ - n + 1)))\n+    return bin(round(summation/(m - n)))\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-103
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-104
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/104: excess logic'
+    original_task_id: Python/104
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,7 +12,8 @@     []\n     \"\"\"\
+      \n     odd_digit_elements = []\n-    for i in x:\n+    for j, i in enumerate(x):\n\
+      \         if all (int(c) % 2 == 1 for c in str(i)):\n             odd_digit_elements.append(i)\n\
+      +            odd_digit_elements.append(j)\n     return sorted(odd_digit_elements)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-104
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-105
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/105: missing logic'
+    original_task_id: Python/105
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -32,7 +32,7 @@         8: \"Eight\"\
+      ,\n         9: \"Nine\",\n     }\n-    sorted_arr = sorted(arr, reverse=True)\n\
+      +    sorted_arr = sorted(arr)\n     new_arr = []\n     for var in sorted_arr:\n\
+      \         try:\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-105
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-106
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/106: variable misuse'
+    original_task_id: Python/106
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,7 +12,7 @@     for i in range(1,n+1):\n\
+      \         if i%2 == 0:\n             x = 1\n-            for j in range(1,i+1):\
+      \ x *= j\n+            for j in range(1,i+1): x *= i\n             ret += [x]\n\
+      \         else:\n             x = 0\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-106
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-107
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/107: value misuse'
+    original_task_id: Python/107
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -28,7 +28,7 @@     even_palindrome_count\
+      \ = 0\n     odd_palindrome_count = 0\n \n-    for i in range(1, n+1):\n+   \
+      \ for i in range(1, n):\n         if i%2 == 1 and is_palindrome(i):\n      \
+      \           odd_palindrome_count += 1\n         elif i%2 == 0 and is_palindrome(i):\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-107
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-108
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/108: excess logic'
+    original_task_id: Python/108
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,6 +13,6 @@         neg = 1\n \
+      \        if n < 0: n, neg = -1 * n, -1 \n         n = [int(i) for i in str(n)]\n\
+      -        n[0] = n[0] * neg\n+        n[0] = n[0] * neg * -1\n         return\
+      \ sum(n)\n     return len(list(filter(lambda x: x > 0, [digits_sum(i) for i\
+      \ in arr])))\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-108
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-109
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/109: variable misuse'
+    original_task_id: Python/109
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -32,7 +32,7 @@     my_arr=[]\n   \
+      \  \n     min_value=min(arr)\n-    min_index=arr.index(min_value)\n+    min_index=sorted_array.index(min_value)\n\
+      \     my_arr=arr[min_index:]+arr[0:min_index]\n     for i in range(len(arr)):\n\
+      \       if my_arr[i]!=sorted_array[i]:\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-109
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-110
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/110: variable misuse'
+    original_task_id: Python/110
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,10 +16,10 @@     even = 0\n  \
+      \   for i in lst1:\n         if i%2 == 1:\n-            odd += 1\n+        \
+      \    even -= 1\n     for i in lst2:\n         if i%2 == 0:\n-            even\
+      \ += 1\n+            odd += 1\n     if even >= odd:\n         return \"YES\"\
+      \n     return \"NO\"\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-110
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-111
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/111: value misuse'
+    original_task_id: Python/111
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,7 +14,7 @@     \"\"\"\n     dict1={}\n\
+      \     list1=test.split(\" \")\n-    t=0\n+    t=1\n \n     for i in list1:\n\
+      \         if(list1.count(i)>t) and i!='':\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-111
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-112
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/112: operator misuse'
+    original_task_id: Python/112
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,4 +11,4 @@     For s = \"abcdedcba\"\
+      , c = \"ab\", the result should be ('cdedc',True)\n     \"\"\"\n     s = ''.join([char\
+      \ for char in s if char not in c])\n-    return (s,s[::-1] == s)\n+    return\
+      \ (s,s[::-1] != s)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-112
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-113
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/113: excess logic'
+    original_task_id: Python/113
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,5 +14,5 @@     res = []\n    \
+      \ for arr in lst:\n         n = sum(int(d)%2==1 for d in arr)\n-        res.append(\"\
+      the number of odd elements \" + str(n) + \"n the str\"+ str(n) +\"ng \"+ str(n)\
+      \ +\" of the \"+ str(n) +\"nput.\")\n+        res.append(\"the number of odd\
+      \ elements \" + str(n) + \"n the str\"+ str(n) +\"ng \"+ str(n) +\" of \"+ str(n)\
+      \ +\" the \"+ str(n) +\"nput.\")\n     return res\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-113
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-114
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - function-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/114: function misuse'
+    original_task_id: Python/114
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,5 +16,5 @@         max_sum = max(s,\
+      \ max_sum)\n     if max_sum == 0:\n         max_sum = max(-i for i in nums)\n\
+      -    min_sum = -max_sum\n+    min_sum = min(-i for i in nums)\n     return min_sum\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id006
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-114
+      rationale: 'Bug type: function misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-115
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - function-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/115: function misuse'
+    original_task_id: Python/115
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -34,4 +34,4 @@         * grid[i][j]\
+      \ -> 0 | 1\n         * 1 <= capacity <= 10\n     \"\"\"\n-    return sum([math.ceil(sum(arr)/capacity)\
+      \ for arr in grid])\n+    return sum([math.floor(sum(arr)/capacity) for arr\
+      \ in grid])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id006
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-115
+      rationale: 'Bug type: function misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-116
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/116: variable misuse'
+    original_task_id: Python/116
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -10,4 +10,4 @@     >>> sort_array([-2,\
+      \ -3, -4, -5, -6]) == [-6, -5, -4, -3, -2]\n     >>> sort_array([1, 0, 2, 3,\
+      \ 4]) [0, 1, 2, 3, 4]\n     \"\"\"\n-    return sorted(sorted(arr), key=lambda\
+      \ x: bin(x)[2:].count('1'))\n+    return sorted(sorted(arr), key=lambda x: arr.count('1'))\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-116
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-117
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/117: operator misuse'
+    original_task_id: Python/117
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,7 +16,7 @@     for word in s.split():\n\
+      \         n_consonants = 0\n         for i in range(0, len(word)):\n-      \
+      \      if word[i].lower() not in [\"a\",\"e\",\"i\",\"o\",\"u\"]:\n+       \
+      \     if word[i].lower() in [\"a\",\"e\",\"i\",\"o\",\"u\"]:\n             \
+      \    n_consonants += 1 \n         if n_consonants == n:\n             result.append(word)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-117
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-118
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/118: excess logic'
+    original_task_id: Python/118
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,11 +15,11 @@     get_closest_vowel(\"\
+      ab\") ==> \"\"\n     \"\"\"\n     if len(word) < 3:\n-        return \"\"\n\
+      +        return \" \"\n \n     vowels = {\"a\", \"e\", \"i\", \"o\", \"u\",\
+      \ \"A\", \"E\", 'O', 'U', 'I'}\n     for i in range(len(word)-2, 0, -1):\n \
+      \        if word[i] in vowels:\n             if (word[i+1] not in vowels) and\
+      \ (word[i-1] not in vowels):\n                 return word[i]\n-    return \"\
+      \"\n+    return \" \"\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-118
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-119
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/119: value misuse'
+    original_task_id: Python/119
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -27,4 +27,4 @@ \n     S1 = lst[0]\
+      \ + lst[1]\n     S2 = lst[1] + lst[0]\n-    return 'Yes' if check(S1) or check(S2)\
+      \ else 'No'\n+    return 'yes' if check(S1) or check(S2) else 'no'\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-119
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-120
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/120: excess logic'
+    original_task_id: Python/120
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -28,4 +28,4 @@         return []\n\
+      \     arr.sort()\n     ans = arr[-k:]\n-    return ans\n+    return ans.sort(reverse=True)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-120
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-121
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/121: value misuse'
+    original_task_id: Python/121
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -8,4 +8,4 @@     solution([3, 3, 3,\
+      \ 3, 3]) ==> 9\n     solution([30, 13, 24, 321]) ==>0\n     \"\"\"\n-    return\
+      \ sum([x for idx, x in enumerate(lst) if idx%2==0 and x%2==1])\n+    return\
+      \ sum([x for idx, x in enumerate(lst) if idx%2==1 and x%2==1])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-121
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-122
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/122: missing logic'
+    original_task_id: Python/122
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,4 +13,4 @@         1. 1 <= len(arr)\
+      \ <= 100\n         2. 1 <= k <= len(arr)\n     \"\"\"\n-    return sum(elem\
+      \ for elem in arr[:k] if len(str(elem)) <= 2)\n+    return sum(elem for elem\
+      \ in arr if len(str(elem)) <= 2)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-122
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-123
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/123: value misuse'
+    original_task_id: Python/123
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -24,7 +24,7 @@         if n % 2 ==\
+      \ 0:\n             n = n/2\n         else:\n-            n = n*3 + 1\n+    \
+      \        n = n*2 + 1\n             \n         if n%2 == 1:\n             odd_collatz.append(int(n))\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-123
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-124
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - variable-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/124: variable misuse'
+    original_task_id: Python/124
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -21,8 +21,8 @@     \"\"\"\n     try:\n\
+      \         date = date.strip()\n-        month, day, year = date.split('-')\n\
+      -        month, day, year = int(month), int(day), int(year)\n+        day, month,\
+      \ year = date.split('-')\n+        day, month, year = int(day), int(month),\
+      \ int(year)\n         if month < 1 or month > 12:\n             return False\n\
+      \         if month in [1,3,5,7,8,10,12] and day < 1 or day > 31:\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id003
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-124
+      rationale: 'Bug type: variable misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-125
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/125: value misuse'
+    original_task_id: Python/125
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,6 +12,6 @@     if \" \" in txt:\n\
+      \         return txt.split()\n     elif \",\" in txt:\n-        return txt.replace(',','\
+      \ ').split()\n+        return txt.replace(' ',',').split()\n     else:\n   \
+      \      return len([i for i in txt if i.islower() and ord(i)%2 == 0])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-125
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-126
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/126: missing logic'
+    original_task_id: Python/126
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -17,9 +17,7 @@     '''\n     count_digit\
+      \ = dict([(i, 0) for i in lst])\n     for i in lst:\n-        count_digit[i]+=1\
+      \ \n-    if any(count_digit[i] > 2 for i in lst):\n-        return False\n+\
+      \        count_digit[i]+=1\n     if all(lst[i-1] <= lst[i] for i in range(1,\
+      \ len(lst))):\n         return True\n     else:\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-126
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-127
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/127: missing logic'
+    original_task_id: Python/127
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -32,6 +32,6 @@     l = max(interval1[0],\
+      \ interval2[0])\n     r = min(interval1[1], interval2[1])\n     length = r -\
+      \ l\n-    if length > 0 and is_prime(length):\n+    if length > 0:\n       \
+      \  return \"YES\"\n     return \"NO\"\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-127
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-128
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/128: excess logic'
+    original_task_id: Python/128
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,5 +12,5 @@     >>> prod_signs([])\
+      \ == None\n     \"\"\"\n     if not arr: return None\n-    prod = 0 if 0 in\
+      \ arr else (-1) ** len(list(filter(lambda x: x < 0, arr)))\n+    prod = 0 if\
+      \ 0 in arr else (-1) ** 2 * len(list(filter(lambda x: x < 0, arr)))\n     return\
+      \ prod * sum([abs(i) for i in arr])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-128
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-129
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/129: value misuse'
+    original_task_id: Python/129
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -36,16 +36,16 @@             if grid[i][j]\
+      \ == 1:\n                 temp = []\n                 if i != 0:\n-        \
+      \            temp.append(grid[i - 1][j])\n+                    temp.append(grid[i][j])\n\
+      \ \n                 if j != 0:\n-                    temp.append(grid[i][j\
+      \ - 1])\n+                    temp.append(grid[i][j])\n \n                 if\
+      \ i != n - 1:\n-                    temp.append(grid[i + 1][j])\n+         \
+      \           temp.append(grid[i][j])\n \n                 if j != n - 1:\n- \
+      \                   temp.append(grid[i][j + 1])\n+                    temp.append(grid[i][j])\n\
+      \ \n                 val = min(temp)\n \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-129
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-130
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/130: excess logic'
+    original_task_id: Python/130
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -23,5 +23,5 @@         if i % 2 ==\
+      \ 0:\n             my_tri.append(i / 2 + 1)\n         else:\n-            my_tri.append(my_tri[i\
+      \ - 1] + my_tri[i - 2] + (i + 3) / 2)\n+            my_tri.append(my_tri[i -\
+      \ 1] + my_tri[i - 2] + i + (i + 3) / 2)\n     return my_tri\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-130
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-131
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/131: excess logic'
+    original_task_id: Python/131
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,7 +12,7 @@     for digit in str(n):\n\
+      \         int_digit = int(digit)\n         if int_digit%2 == 1:\n-         \
+      \   product= product*int_digit\n+            product*= product*int_digit\n \
+      \            odd_count+=1\n     if odd_count ==0:\n         return 0\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-131
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-132
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/132: value misuse'
+    original_task_id: Python/132
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,7 +15,7 @@     opening_bracket_index\
+      \ = []\n     closing_bracket_index = []\n     for i in range(len(string)):\n\
+      -        if string[i] == '[':\n+        if string[i] == '(':\n             opening_bracket_index.append(i)\n\
+      \         else:\n             closing_bracket_index.append(i)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-132
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-133
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - operator-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/133: operator misuse'
+    original_task_id: Python/133
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,5 +16,5 @@     import math\n \
+      \    squared = 0\n     for i in lst:\n-        squared += math.ceil(i)**2\n\
+      +        squared += math.ceil(i)*2\n     return squared\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id001
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-133
+      rationale: 'Bug type: operator misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-134
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - function-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/134: function misuse'
+    original_task_id: Python/134
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,4 +14,4 @@     '''\n  \n     check\
+      \ = txt.split(' ')[-1]\n-    return True if len(check) == 1 and (97 <= ord(check.lower())\
+      \ <= 122) else False\n+    return True if len(check) == 1 and (97 <= ord(check.upper())\
+      \ <= 122) else False\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id006
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-134
+      rationale: 'Bug type: function misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-135
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/135: excess logic'
+    original_task_id: Python/135
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,4 +15,5 @@       if arr[i]<arr[i-1]:\n\
+      \         ind=i\n       i+=1\n+      ind-=1\n     return ind\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-135
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-136
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/136: excess logic'
+    original_task_id: Python/136
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,4 +13,6 @@     '''\n     smallest\
+      \ = list(filter(lambda x: x < 0, lst))\n     largest = list(filter(lambda x:\
+      \ x > 0, lst))\n+    largest = list(filter(lambda x: x > 0, smallest))\n+  \
+      \  smallest = list(filter(lambda x: x > 0, largest))\n     return (max(smallest)\
+      \ if smallest else None, min(largest) if largest else None)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-136
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-137
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/137: excess logic'
+    original_task_id: Python/137
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,7 +12,7 @@     compare_one(\"\
+      1\", 1) ➞ None\n     \"\"\"\n     temp_a, temp_b = a, b\n-    if isinstance(temp_a,\
+      \ str): temp_a = temp_a.replace(',','.')\n+    if isinstance(temp_a, str): temp_a\
+      \ = temp_a.replace(',','.').replace('.',',')\n     if isinstance(temp_b, str):\
+      \ temp_b = temp_b.replace(',','.')\n     if float(temp_a) == float(temp_b):\
+      \ return None\n     return a if float(temp_a) > float(temp_b) else b \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-137
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-138
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/138: excess logic'
+    original_task_id: Python/138
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -6,4 +6,4 @@     is_equal_to_sum_even(6)\
+      \ == False\n     is_equal_to_sum_even(8) == True\n     \"\"\"\n-    return n%2\
+      \ == 0 and n >= 8\n+    return n%2 == 0 and n >= 8 and n <= 8\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-138
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-139
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/139: excess logic'
+    original_task_id: Python/139
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,6 +14,7 @@     fact_i = 1\n  \
+      \   special_fact = 1\n     for i in range(1, n+1):\n+        i *= n\n      \
+      \   fact_i *= i\n         special_fact *= fact_i\n     return special_fact\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-139
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-140
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/140: excess logic'
+    original_task_id: Python/140
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -28,5 +28,5 @@     if end - start\
+      \ > 2:\n         new_text += \"-\"\n     elif end - start > 0:\n-        new_text\
+      \ += \"_\"\n+        new_text += \"__\"\n     return new_text\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-140
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-141
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/141: missing logic'
+    original_task_id: Python/141
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -17,8 +17,6 @@     lst = file_name.split(sep='.')\n\
+      \     if len(lst) != 2:\n         return 'No'\n-    if not lst[1] in suf:\n\
+      -        return 'No'\n     if len(lst[0]) == 0:\n         return 'No'\n    \
+      \ if not lst[0][0].isalpha():\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-141
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-142
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/142: missing logic'
+    original_task_id: Python/142
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -16,7 +16,7 @@     for i in range(len(lst)):\n\
+      \         if i %3 == 0:\n             result.append(lst[i]**2)\n-        elif\
+      \ i % 4 == 0 and i%3 != 0:\n+        elif i%3 != 0:\n             result.append(lst[i]**3)\n\
+      \         else:\n             result.append(lst[i])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-142
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-143
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/143: missing logic'
+    original_task_id: Python/143
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -22,8 +22,6 @@     new_lst = []\n\
+      \     for word in sentence.split():\n         flg = 0\n-        if len(word)\
+      \ == 1:\n-            flg = 1\n         for i in range(2, len(word)):\n    \
+      \         if len(word)%i == 0:\n                 flg = 1\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-143
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-144
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/144: excess logic'
+    original_task_id: Python/144
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,6 +13,8 @@     \"\"\"\n     a,\
+      \ b = x.split(\"/\")\n     c, d = n.split(\"/\")\n+    a = int(b) * int(c)\n\
+      +    d = int(c) * int(b)\n     numerator = int(a) * int(c)\n     denom = int(b)\
+      \ * int(d)\n     if (numerator/denom == int(numerator/denom)):\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-144
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-145
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/145: excess logic'
+    original_task_id: Python/145
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,7 +12,7 @@     \"\"\"\n     def\
+      \ digits_sum(n):\n         neg = 1\n-        if n < 0: n, neg = -1 * n, -1 \n\
+      +        if n < 0: n, neg = -1 * n, -1 + n \n         n = [int(i) for i in str(n)]\n\
+      \         n[0] = n[0] * neg\n         return sum(n)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-145
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-146
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/146: excess logic'
+    original_task_id: Python/146
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,7 +11,7 @@     count = 0\n   \
+      \  for num in nums:\n         if num > 10:\n-            odd_digits = (1, 3,\
+      \ 5, 7, 9)\n+            odd_digits = (1, 2, 3, 5, 7, 9)\n             number_as_string\
+      \ = str(num)\n             if int(number_as_string[0]) in odd_digits and int(number_as_string[-1])\
+      \ in odd_digits:\n                 count += 1\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-146
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-147
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/147: missing logic'
+    original_task_id: Python/147
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -13,7 +13,7 @@         a = [1, 3,\
+      \ 7, 13, 21]\n         The only valid triple is (1, 7, 13).\n     \"\"\"\n-\
+      \    A = [i*i - i + 1 for i in range(1,n+1)]\n+    A = [i*i for i in range(1,n+1)]\n\
+      \     ans = []\n     for i in range(n):\n         for j in range(i+1,n):\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-147
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-148
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/148: value misuse'
+    original_task_id: Python/148
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,7 +15,7 @@     bf(\"Earth\", \"\
+      Mercury\") ==> (\"Venus\")\n     bf(\"Mercury\", \"Uranus\") ==> (\"Venus\"\
+      , \"Earth\", \"Mars\", \"Jupiter\", \"Saturn\")\n     '''\n-    planet_names\
+      \ = (\"Mercury\", \"Venus\", \"Earth\", \"Mars\", \"Jupiter\", \"Saturn\", \"\
+      Uranus\", \"Neptune\")\n+    planet_names = (\"Mercury\", \"Venus\", \"Earth\"\
+      , \"Mars\", \"Jupyter\", \"Saturn\", \"Uranus\", \"Neptune\")\n     if planet1\
+      \ not in planet_names or planet2 not in planet_names or planet1 == planet2:\n\
+      \         return ()\n     planet1_index = planet_names.index(planet1)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-148
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-149
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/149: missing logic'
+    original_task_id: Python/149
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -19,4 +19,4 @@     for i in lst:\n\
+      \         if len(i)%2 == 0:\n             new_lst.append(i)\n-    return sorted(new_lst,\
+      \ key=len)\n+    return new_lst\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-149
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-150
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/150: excess logic'
+    original_task_id: Python/150
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,7 +11,7 @@     if n == 1:\n  \
+      \       return y\n     for i in range(2, n):\n-        if n % i == 0:\n+   \
+      \     if n % i - 1 == 0:\n             return y\n             break\n     else:\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-150
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-151
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/151: missing logic'
+    original_task_id: Python/151
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,4 +11,4 @@    \n     If the input\
+      \ list is empty, return 0.\n     '''\n-    return sum([i**2 for i in lst if\
+      \ i > 0 and i%2!=0 and \".\" not in str(i)])\n+    return sum([i**2 for i in\
+      \ lst if i > 0 and \".\" not in str(i)])\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-151
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-152
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/152: excess logic'
+    original_task_id: Python/152
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -14,4 +14,4 @@     compare([1,2,3,4,5,1],[1,2,3,4,2,-2])\
+      \ -> [0,0,0,0,3,3]\n     compare([0,5,0,0,0,4],[4,1,1,0,0,-2]) -> [4,4,1,0,0,6]\n\
+      \     \"\"\"\n-    return [abs(x-y) for x,y in zip(game,guess)]\n+    return\
+      \ [abs(x-y)+abs(y-x) for x,y in zip(game,guess)]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-152
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-153
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/153: missing logic'
+    original_task_id: Python/153
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -24,6 +24,6 @@             strong\
+      \ = s\n             my_val = val\n \n-    ans = class_name + \".\" + strong\n\
+      +    ans = class_name + strong\n     return ans\n \n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-153
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-154
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/154: value misuse'
+    original_task_id: Python/154
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,7 +12,7 @@     l = len(b)\n  \
+      \   pat = b + b\n     for i in range(len(a) - l + 1):\n-        for j in range(l\
+      \ + 1):\n+        for j in range(len(b) - l + 1):\n             if a[i:i+l]\
+      \ == pat[j:j+l]:\n                 return True\n     return False\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-154
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-155
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/155: missing logic'
+    original_task_id: Python/155
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -11,6 +11,4 @@     for i in str(abs(num)):\n\
+      \         if int(i)%2==0:\n             even_count +=1\n-        else:\n-  \
+      \          odd_count +=1\n     return (even_count, odd_count)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-155
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-156
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - infinite-loop
+    description: 'HumanEvalFix Python/156: missing logic'
+    original_task_id: Python/156
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -20,7 +20,6 @@         div = number\
+      \ // num[i] \n         number %= num[i] \n         while div: \n-          \
+      \  res += sym[i] \n-            div -= 1\n+            res += sym[i]\n     \
+      \    i -= 1\n     return res.lower()\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      issue_id: exp-156
+      rationale: 'Bug type: missing logic, Symptom: infinite loop'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-157
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/157: missing logic'
+    original_task_id: Python/157
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,4 +9,4 @@     right_angle_triangle(3,\
+      \ 4, 5) == True\n     right_angle_triangle(1, 2, 3) == False\n     '''\n-  \
+      \  return a*a == b*b + c*c or b*b == a*a + c*c or c*c == a*a + b*b\n+    return\
+      \ c*c == a*a + b*b\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-157
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-158
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/158: missing logic'
+    original_task_id: Python/158
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -9,4 +9,4 @@     find_max([\"name\"\
+      , \"enam\", \"game\"]) == \"enam\"\n     find_max([\"aaaaaaa\", \"bb\" ,\"cc\"\
+      ]) == \"\"aaaaaaa\"\n     \"\"\"\n-    return sorted(words, key = lambda x:\
+      \ (-len(set(x)), x))[0]\n+    return sorted(words)[0]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-158
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-159
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/159: excess logic'
+    original_task_id: Python/159
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -29,6 +29,6 @@     Have fun :)\n \
+      \    \"\"\"\n     if(need <= remaining):\n-        return [ number + need ,\
+      \ remaining-need ]\n+        return [ number + need , number + remaining-need\
+      \ ]\n     else:\n-        return [ number + remaining , 0]\n+        return\
+      \ [ number + need + remaining , 0]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-159
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-160
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - excess-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/160: excess logic'
+    original_task_id: Python/160
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -26,5 +26,5 @@     \"\"\"\n     expression\
+      \ = str(operand[0])\n     for oprt, oprn in zip(operator, operand[1:]):\n- \
+      \       expression+= oprt + str(oprn)\n+        expression+=expression + oprt\
+      \ + str(oprn)\n     return eval(expression)\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id005
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-160
+      rationale: 'Bug type: excess logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-161
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - missing-logic
+    - incorrect-output
+    description: 'HumanEvalFix Python/161: missing logic'
+    original_task_id: Python/161
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -15,7 +15,7 @@     new_str = list(s)\n\
+      \     for i in s:\n         if i.isalpha():\n-            new_str[idx] = i.swapcase()\n\
+      +            new_str[idx] = i\n             flg = 1\n         idx += 1\n   \
+      \  s = \"\"\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id002
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-161
+      rationale: 'Bug type: missing logic, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-162
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - function-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/162: function misuse'
+    original_task_id: Python/162
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -7,4 +7,4 @@     >>> string_to_md5('Hello\
+      \ world') == '3e25960a79dbc69b674cd4ec67a72c62'\n     \"\"\"\n     import hashlib\n\
+      -    return hashlib.md5(text.encode('ascii')).hexdigest() if text else None\n\
+      +    return hashlib.md5('text').hexdigest() if text else None\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: high
+      title_keywords: *id006
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-162
+      rationale: 'Bug type: function misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
+- id: humanevalfix-163
+  metadata:
+    source: humanevalfix
+    difficulty: medium
+    primary_category: correctness
+    tags:
+    - value-misuse
+    - incorrect-output
+    description: 'HumanEvalFix Python/163: value misuse'
+    original_task_id: Python/163
+  input:
+    diff: "--- a/solution.py+++ b/solution.py@@ -12,4 +12,4 @@     lower = max(2,\
+      \ min(a, b))\n     upper = min(8, max(a, b))\n \n-    return [i for i in range(lower,\
+      \ upper+1) if i % 2 == 0]\n+    return [i for i in range(lower, upper) if i\
+      \ % 2 == 0]\n"
+  expected:
+    issues:
+    - category: correctness
+      severity_min: medium
+      title_keywords: *id004
+      description_keywords:
+      - bug
+      - error
+      - incorrect
+      - output
+      - result
+      - return
+      issue_id: exp-163
+      rationale: 'Bug type: value misuse, Symptom: incorrect output'
+    min_issues: 1
+    max_issues: 3
