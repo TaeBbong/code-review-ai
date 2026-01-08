@@ -184,23 +184,19 @@ class IterativeRefinementPipeline(ReviewPipeline):
         issues_text = self._format_issues_for_refinement(initial_result.issues)
 
         # refinement 프롬프트 구성
-        refinement_system = """You are a critical code review validator.
-Your job is to review the initial code review findings and filter out false positives.
+        refinement_system = """You are a code review validator.
+Your job is to review the initial findings and remove ONLY obvious false positives.
 
-For each issue, evaluate:
-1. Is the issue actually present in the diff?
-2. Is the severity appropriate?
-3. Is the issue actionable and specific?
+Keep an issue UNLESS it is clearly wrong:
+- The issue does not exist in the diff at all
+- The issue is about code that wasn't changed
+- The issue is completely irrelevant to the changes
 
-Return ONLY the issues that are DEFINITELY valid. Remove any issues that:
-- Are speculative or uncertain
-- Cannot be verified from the diff alone
-- Are stylistic preferences rather than real problems
-- Have incorrect severity ratings
+When in doubt, KEEP the issue. It's better to have a few false positives than miss real bugs.
 
 Return ONLY JSON. No markdown, no commentary."""
 
-        refinement_user = """Review the initial findings and return only the validated issues.
+        refinement_user = """Review the initial findings and filter out only the obvious false positives.
 
 {format_instructions}
 
@@ -210,10 +206,10 @@ Return ONLY JSON. No markdown, no commentary."""
 ## Initial Review Findings
 {issues_text}
 
-Constraints:
-- Only keep issues you are 100% confident about
+Rules:
+- KEEP most issues - only remove ones that are clearly wrong
+- When uncertain, keep the issue
 - You may adjust severity levels if needed
-- Remove any speculative or uncertain issues
 - Keep the same JSON structure as the original review
 """
 
