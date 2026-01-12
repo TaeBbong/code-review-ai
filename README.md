@@ -53,12 +53,14 @@ backend/
 │   └── tools/
 │       ├── git_diff.py          # Git diff 유틸리티
 │       ├── get_symbols.py       # diff에서 심볼 추출 (함수, 클래스 등)
-│       └── ripgrep_refs.py      # ripgrep 기반 심볼 레퍼런스 검색
+│       ├── ripgrep_refs.py      # ripgrep 기반 심볼 레퍼런스 검색
+│       ├── symbol_definition.py # 심볼 정의 본문 가져오기
+│       └── similar_code.py      # n-gram 기반 유사 코드 탐지
 ├── pipelines/
 │   ├── base.py                  # ReviewPipeline ABC (Template Method)
 │   ├── registry.py              # PipelineRegistry
 │   ├── evidence/
-│   │   └── refs_builder.py      # evidence_pack.refs 빌더
+│   │   └── refs_builder.py      # evidence 빌더 (refs, definitions, similar)
 │   ├── presets/                 # Variant별 파이프라인 설정
 │   │   ├── g0-baseline.yaml
 │   │   ├── g1-mapreduce.yaml
@@ -222,24 +224,27 @@ class ReviewPipeline(ABC):
         # 1) diff 준비 (hook)
         diff, diff_target = await self.resolve_diff(req)
 
-        # 2) 청크 분할 (hook) - map-reduce용
+        # 2) evidence 수집 (hook) - 심볼 정의, 유사 코드 등
+        self._evidence_pack = await self.build_evidence(req=req, diff=diff)
+
+        # 3) 청크 분할 (hook) - map-reduce용
         chunks = await self.split_chunks(diff)
 
-        # 3) LLM + Parser 준비
+        # 4) LLM + Parser 준비
         adapter = get_llm_adapter()
         llm = AdapterChatModel(adapter)
 
-        # 4) 리뷰 실행 (단일 vs map-reduce)
+        # 5) 리뷰 실행 (단일 vs map-reduce)
         if len(chunks) <= 1:
             result = await self._review_single(...)
         else:
             result = await self._review_map_reduce(...)
 
-        # 5) 메타 정보 주입
+        # 6) 메타 정보 주입
         result.meta.variant_id = variant_id
         ...
 
-        # 6) 후처리 (hook)
+        # 7) 후처리 (hook)
         await self.after_run(req=req, result=result, ...)
         return result
 
@@ -250,6 +255,9 @@ class ReviewPipeline(ABC):
 
     async def split_chunks(self, diff: str) -> List[DiffChunk]:
         """diff를 청크로 분할 (기본: 분할 안 함)"""
+
+    async def build_evidence(self, *, req, diff) -> dict:
+        """추가 컨텍스트 수집 - 심볼 정의, 유사 코드 등 (기본: 빈 dict)"""
 
     async def build_review_payload(self, *, req, diff, diff_target, chunk) -> dict:
         """LLM에 전달할 payload 구성 (확장 가능)"""
@@ -263,7 +271,7 @@ class ReviewPipeline(ABC):
 
 **왜 Template Method 패턴인가요?**
 
-- 파이프라인 실행 순서(diff 준비 → 청크 분할 → LLM 호출 → 병합 → 후처리)는 **고정**
+- 파이프라인 실행 순서(diff 준비 → evidence 수집 → 청크 분할 → LLM 호출 → 병합 → 후처리)는 **고정**
 - variant별로 다른 부분만 **hook 메서드**로 오버라이드
 - 코드 중복 최소화, 일관된 실행 흐름 보장
 
@@ -529,6 +537,54 @@ params:
   max_concurrency: 5     # 병렬 LLM 호출 수
   aggregation_mode: llm  # "llm" (지능적 집계) 또는 "simple" (단순 합산)
 ```
+
+#### Evidence 시스템
+
+Evidence 시스템은 diff에 대한 **추가 컨텍스트**를 수집하여 LLM에게 제공합니다. 이를 통해 더 정확한 리뷰가 가능합니다.
+
+**`build_evidence()` Hook:**
+- `base.py`의 Template Method에 포함된 hook
+- diff 준비 후, 청크 분할 전에 실행됨
+- 수집된 evidence는 `self._evidence_pack`에 저장
+- `build_review_payload()`에서 LLM에 전달 가능
+
+**사용 가능한 Evidence 종류:**
+
+| 종류 | 설명 | 빌더 함수 |
+|------|------|----------|
+| `refs` | 심볼 사용처 (ripgrep 기반) | `build_refs_evidence()` |
+| `definitions` | 참조하는 심볼의 정의 본문 | `build_definitions_evidence()` |
+| `similar` | 유사한 기존 코드 (n-gram 기반) | `build_similar_code_evidence()` |
+
+**Evidence 도구 (`domain/tools/`):**
+
+| 파일 | 역할 |
+|------|------|
+| `get_symbols.py` | diff에서 변경된 심볼(함수, 클래스) 추출 |
+| `ripgrep_refs.py` | ripgrep으로 심볼 사용처 검색 |
+| `symbol_definition.py` | 심볼의 정의 본문 가져오기 |
+| `similar_code.py` | n-gram 토큰 유사도 기반 코드 검색 |
+
+**통합 빌더 사용 예시:**
+
+```python
+from backend.pipelines.evidence.refs_builder import build_full_evidence
+
+# variant의 build_evidence() 오버라이드
+async def build_evidence(self, *, req, diff) -> Dict[str, Any]:
+    return await build_full_evidence(
+        diff_text=diff,
+        repo_root="/path/to/repo",
+        include_refs=True,        # 심볼 사용처
+        include_definitions=True,  # 심볼 정의 본문
+        include_similar=True,      # 유사 코드
+    )
+```
+
+**활용 사례:**
+- **refs**: 변경된 함수가 어디서 호출되는지 파악 → 영향 범위 분석
+- **definitions**: 호출하는 외부 함수의 구현 확인 → API 오용 탐지
+- **similar**: 기존 코드와 비교 → 중복 코드, 일관성 없는 패턴 발견
 
 ### Variant 선택 우선순위
 

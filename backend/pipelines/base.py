@@ -37,6 +37,7 @@ class ReviewPipeline(ABC):
     Hooks:
     - resolve_diff(): diff 준비(로컬 git 등)
     - split_chunks(): diff를 청크로 분할 (map-reduce용)
+    - build_evidence(): 컨텍스트 수집 (심볼 정의, 유사 코드 등)
     - build_review_payload(): LLM 입력 payload 확장
     - reduce_results(): 여러 리뷰 결과를 병합 (map-reduce용)
     - after_run(): 결과 저장/리포트 등 후처리
@@ -45,6 +46,7 @@ class ReviewPipeline(ABC):
     def __init__(self, *, pack, params: Dict[str, Any]):
         self.pack = pack
         self.params = params
+        self._evidence_pack: Dict[str, Any] = {}  # evidence 캐시
 
     async def run(self, req: ReviewRequest) -> ReviewResult:
         run_id = run_id_var.get()
@@ -52,20 +54,23 @@ class ReviewPipeline(ABC):
         # 1) diff 준비 (hook)
         diff, diff_target = await self.resolve_diff(req)
 
-        # 2) 청크 분할 (hook) - 기본은 단일 청크
+        # 2) evidence 수집 (hook) - 심볼 정의, 유사 코드 등
+        self._evidence_pack = await self.build_evidence(req=req, diff=diff)
+
+        # 3) 청크 분할 (hook) - 기본은 단일 청크
         chunks = await self.split_chunks(diff)
 
-        # 3) llm + parser 준비
+        # 4) llm + parser 준비
         adapter = get_llm_adapter()
         llm = AdapterChatModel(adapter)
         parser = PydanticOutputParser(pydantic_object=ReviewResult)
         format_instructions = parser.get_format_instructions()
 
-        # 4) chains 구성
+        # 5) chains 구성
         review_chain = self.build_chain(llm, mode="review", format_instructions=format_instructions)
         repair_chain = self.build_chain(llm, mode="repair", format_instructions=format_instructions)
 
-        # 5) 리뷰 실행 (단일 vs map-reduce)
+        # 6) 리뷰 실행 (단일 vs map-reduce)
         bad_max_chars = int(self.params.get("bad_max_chars", self.pack.params.get("bad_max_chars", 4000)))
 
         if len(chunks) <= 1:
@@ -92,7 +97,7 @@ class ReviewPipeline(ABC):
                 bad_max_chars=bad_max_chars,
             )
 
-        # 6) meta inject
+        # 7) meta inject
         result.meta.variant_id = getattr(req, "variant_id", None) or ""
         result.meta.run_id = run_id
         result.meta.repair_used = repair_used
@@ -101,7 +106,7 @@ class ReviewPipeline(ABC):
         result.meta.diff_target = diff_target
         result.meta.generated_at = datetime.now().isoformat()
 
-        # 7) 후처리 hook
+        # 8) 후처리 hook
         await self.after_run(
             req=req,
             result=result,
@@ -215,6 +220,34 @@ class ReviewPipeline(ABC):
         단일 청크 반환 시 기존 로직대로 동작.
         """
         return [DiffChunk(file_path="", content=diff)]
+
+    async def build_evidence(
+        self,
+        *,
+        req: ReviewRequest,
+        diff: str,
+    ) -> Dict[str, Any]:
+        """
+        diff에 대한 추가 컨텍스트(evidence)를 수집.
+        기본 구현은 빈 dict 반환.
+
+        오버라이드하여 다음과 같은 정보 수집 가능:
+        - refs: 심볼 사용처 (ripgrep 기반)
+        - definitions: 참조하는 심볼의 정의 본문
+        - similar: 유사한 기존 코드
+
+        수집된 evidence는 self._evidence_pack에 저장되고,
+        build_review_payload()에서 LLM에 전달할 수 있음.
+
+        Returns:
+            Dict with evidence data, e.g.:
+            {
+                "refs": [...],
+                "definitions": [...],
+                "similar": [...]
+            }
+        """
+        return {}
 
     async def build_review_payload(
         self,

@@ -7,6 +7,7 @@ from backend.config.settings import settings
 from backend.pipelines.base import ReviewPipeline
 from backend.pipelines.evidence.refs_builder import build_refs_evidence
 from backend.domain.schemas.diff import DiffChunk
+from backend.domain.schemas.review import ReviewRequest
 from backend.domain.tools.git_diff import get_git_diff, GitError, chunk_diff_by_file
 
 
@@ -21,7 +22,7 @@ class MapReducePipeline(ReviewPipeline):
     - evidence_pack.refs에 검색 결과를 포함하여 LLM에 전달
     """
 
-    async def resolve_diff(self, req):
+    async def resolve_diff(self, req: ReviewRequest) -> tuple[str, str]:
         raw = (getattr(req, "diff", None) or "").strip()
         if raw:
             return raw, "raw"
@@ -72,25 +73,16 @@ class MapReducePipeline(ReviewPipeline):
 
         return chunks
 
-    async def build_review_payload(
+    async def build_evidence(
         self,
         *,
-        req,
+        req: ReviewRequest,
         diff: str,
-        diff_target: str,
-        chunk: DiffChunk | None = None,
     ) -> Dict[str, Any]:
         """
-        LLM에 전달할 payload를 구성.
-        evidence_pack.refs에 ripgrep 검색 결과를 포함.
+        ripgrep으로 심볼 레퍼런스를 수집.
+        수집된 evidence는 build_review_payload()에서 LLM에 전달됨.
         """
-        payload = await super().build_review_payload(
-            req=req,
-            diff=diff,
-            diff_target=diff_target,
-            chunk=chunk,
-        )
-
         # repo_root 결정: settings > params > current directory
         repo_root = (
             str(settings.review_repo_path) if settings.review_repo_path
@@ -106,6 +98,30 @@ class MapReducePipeline(ReviewPipeline):
             max_symbols=max_symbols,
             top_k_per_symbol=top_k_per_symbol,
         )
+
+        return {"refs": refs}
+
+    async def build_review_payload(
+        self,
+        *,
+        req: ReviewRequest,
+        diff: str,
+        diff_target: str,
+        chunk: DiffChunk | None = None,
+    ) -> Dict[str, Any]:
+        """
+        LLM에 전달할 payload를 구성.
+        evidence_pack에 수집된 refs를 포함.
+        """
+        payload = await super().build_review_payload(
+            req=req,
+            diff=diff,
+            diff_target=diff_target,
+            chunk=chunk,
+        )
+
+        # self._evidence_pack은 build_evidence()에서 채워짐
+        refs = self._evidence_pack.get("refs", [])
 
         payload["evidence_pack"] = {
             "refs": refs,
