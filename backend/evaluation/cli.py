@@ -23,6 +23,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from tqdm import tqdm
+
 from backend.evaluation.loader import load_dataset_by_name, list_available_datasets
 from backend.evaluation.evaluator import Evaluator
 from backend.evaluation.schemas import EvalRunResult
@@ -116,13 +118,26 @@ async def cmd_run_local(args: argparse.Namespace) -> None:
         req = ReviewRequest(diff=diff, variant_id=variant_id)
         return await review_service.review(req)
 
+    # Create progress bar
+    pbar = tqdm(
+        total=len(dataset.samples),
+        desc=f"Evaluating {args.variant}",
+        unit="sample",
+    )
+
+    def on_complete(sample_id: str, score):
+        pbar.update(1)
+        pbar.set_postfix({"last": sample_id, "f1": f"{score.f1_score:.0%}"})
+
     # Run evaluation
-    print(f"Running evaluation with variant: {args.variant}")
     result = await evaluator.run(
         review_fn=review_fn,
         variant_id=args.variant,
         max_concurrency=args.concurrency,
+        on_sample_complete=on_complete,
     )
+
+    pbar.close()
 
     # Print summary
     print_result_summary(result)
@@ -130,7 +145,7 @@ async def cmd_run_local(args: argparse.Namespace) -> None:
     # Save result if requested
     if args.output:
         output_path = Path(args.output)
-        output_path.write_text(result.model_dump_json(indent=2))
+        output_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
         print(f"Result saved to: {output_path}")
 
 
@@ -168,9 +183,17 @@ async def cmd_compare(args: argparse.Namespace) -> None:
     review_service = ReviewService()
 
     results = []
+    total_evals = len(args.variants) * len(dataset.samples)
+
+    # Create overall progress bar
+    pbar = tqdm(
+        total=total_evals,
+        desc="Comparing variants",
+        unit="sample",
+    )
 
     for variant_id in args.variants:
-        print(f"\nEvaluating: {variant_id}")
+        pbar.set_description(f"Evaluating {variant_id}")
 
         # Create evaluator
         evaluator = Evaluator(dataset=dataset)
@@ -180,13 +203,19 @@ async def cmd_compare(args: argparse.Namespace) -> None:
             req = ReviewRequest(diff=diff, variant_id=vid)
             return await review_service.review(req)
 
+        def on_complete(sample_id: str, score):
+            pbar.update(1)
+
         # Run evaluation
         result = await evaluator.run(
             review_fn=review_fn,
             variant_id=variant_id,
             max_concurrency=args.concurrency,
+            on_sample_complete=on_complete,
         )
         results.append(result)
+
+    pbar.close()
 
     # Print comparison
     print_comparison_table(results)
@@ -199,7 +228,9 @@ async def cmd_compare(args: argparse.Namespace) -> None:
             "dataset": args.dataset,
             "results": [r.model_dump() for r in results],
         }
-        output_path.write_text(json.dumps(output_data, indent=2, default=str))
+        output_path.write_text(
+            json.dumps(output_data, indent=2, default=str), encoding="utf-8"
+        )
         print(f"Comparison saved to: {output_path}")
 
 

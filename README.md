@@ -852,8 +852,11 @@ samples:
 # 데이터셋 목록 확인
 uv run python -m backend.evaluation.cli list
 
-# 단일 variant 평가
+# 단일 variant 평가 (progress bar 표시)
 uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce
+
+# 동시성 제어 (OpenAI rate limit 대응 등)
+uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce --concurrency 1
 
 # 여러 variant 비교
 uv run python -m backend.evaluation.cli compare v1_initial \
@@ -862,6 +865,12 @@ uv run python -m backend.evaluation.cli compare v1_initial \
 # 결과를 JSON으로 저장
 uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce -o result.json
 ```
+
+**CLI 옵션:**
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--concurrency` | 동시 평가 수 | run-local: 4, compare: 2 |
+| `-o, --output` | 결과 저장 경로 (JSON) | - |
 
 ### 코드에서 사용
 
