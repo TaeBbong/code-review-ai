@@ -78,6 +78,12 @@ interface Meta {
   generated_at: string;
 }
 
+interface PatchSuggestion {
+  file: string;
+  unified_diff: string;
+  rationale: string;
+}
+
 interface ReviewResult {
   meta: Meta;
   summary: Summary;
@@ -85,11 +91,98 @@ interface ReviewResult {
   test_suggestions: { title: string; rationale: string }[];
   questions_to_author: { question: string; reason: string }[];
   merge_blockers: string[];
+  patch_suggestions: PatchSuggestion[];
 }
 
 interface ReviewRequest {
   diff: string;
   variant_id: string;
+}
+
+// Parsed diff structure for code snippets
+interface DiffHunk {
+  file: string;
+  oldStart: number;
+  newStart: number;
+  lines: { type: "context" | "add" | "remove"; content: string; lineNum: number }[];
+}
+
+// ============================================================================
+// Diff Parser
+// ============================================================================
+
+function parseDiff(diffText: string): Map<string, DiffHunk[]> {
+  const files = new Map<string, DiffHunk[]>();
+  const lines = diffText.split("\n");
+
+  let currentFile = "";
+  let currentHunk: DiffHunk | null = null;
+  let newLineNum = 0;
+
+  for (const line of lines) {
+    // Match file header: diff --git a/path b/path or +++ b/path
+    const fileMatch = line.match(/^\+\+\+ b\/(.+)$/);
+    if (fileMatch) {
+      currentFile = fileMatch[1];
+      if (!files.has(currentFile)) {
+        files.set(currentFile, []);
+      }
+      continue;
+    }
+
+    // Match hunk header: @@ -old,count +new,count @@
+    const hunkMatch = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+    if (hunkMatch && currentFile) {
+      currentHunk = {
+        file: currentFile,
+        oldStart: parseInt(hunkMatch[1], 10),
+        newStart: parseInt(hunkMatch[2], 10),
+        lines: [],
+      };
+      newLineNum = currentHunk.newStart;
+      files.get(currentFile)!.push(currentHunk);
+      continue;
+    }
+
+    // Parse diff lines
+    if (currentHunk && (line.startsWith("+") || line.startsWith("-") || line.startsWith(" "))) {
+      const type: "add" | "remove" | "context" =
+        line.startsWith("+") ? "add" :
+        line.startsWith("-") ? "remove" : "context";
+
+      currentHunk.lines.push({
+        type,
+        content: line.slice(1),
+        lineNum: type === "remove" ? -1 : newLineNum,
+      });
+
+      if (type !== "remove") {
+        newLineNum++;
+      }
+    }
+  }
+
+  return files;
+}
+
+function getCodeSnippetForLocation(
+  parsedDiff: Map<string, DiffHunk[]>,
+  location: Location
+): DiffHunk | null {
+  const hunks = parsedDiff.get(location.file);
+  if (!hunks) return null;
+
+  // Find the hunk that contains the specified line range
+  for (const hunk of hunks) {
+    const hunkStart = hunk.newStart;
+    const hunkEnd = hunkStart + hunk.lines.filter(l => l.type !== "remove").length;
+
+    if (location.line_start >= hunkStart && location.line_start <= hunkEnd) {
+      return hunk;
+    }
+  }
+
+  return null;
 }
 
 // ============================================================================
@@ -392,13 +485,66 @@ function renderErrorHtml(
 </html>`;
 }
 
+function renderCodeSnippet(hunk: DiffHunk, location: Location): string {
+  // Filter lines around the issue location
+  const relevantLines = hunk.lines.filter((line) => {
+    if (line.lineNum === -1) return true; // Always show removed lines
+    return line.lineNum >= location.line_start - 2 && line.lineNum <= location.line_end + 2;
+  });
+
+  if (relevantLines.length === 0) return "";
+
+  const linesHtml = relevantLines
+    .map((line) => {
+      const lineClass =
+        line.type === "add" ? "line-add" :
+        line.type === "remove" ? "line-remove" : "line-context";
+      const prefix = line.type === "add" ? "+" : line.type === "remove" ? "-" : " ";
+      const lineNumDisplay = line.lineNum === -1 ? "  " : String(line.lineNum).padStart(3, " ");
+      return `<div class="code-line ${lineClass}"><span class="line-num">${lineNumDisplay}</span><span class="line-prefix">${prefix}</span><span class="line-content">${escapeHtml(line.content)}</span></div>`;
+    })
+    .join("");
+
+  return `<div class="code-snippet"><div class="code-header">${escapeHtml(hunk.file)}</div><div class="code-body">${linesHtml}</div></div>`;
+}
+
+function renderUnifiedDiff(diff: string): string {
+  const lines = diff.split("\n");
+  const linesHtml = lines
+    .map((line) => {
+      let lineClass = "line-context";
+      if (line.startsWith("+") && !line.startsWith("+++")) {
+        lineClass = "line-add";
+      } else if (line.startsWith("-") && !line.startsWith("---")) {
+        lineClass = "line-remove";
+      } else if (line.startsWith("@@")) {
+        lineClass = "line-hunk";
+      }
+      return `<div class="code-line ${lineClass}"><span class="line-content">${escapeHtml(line)}</span></div>`;
+    })
+    .join("");
+
+  return `<div class="code-body">${linesHtml}</div>`;
+}
+
 function renderReviewHtml(
   commitInfo: { hash: string; message: string },
-  result: ReviewResult
+  result: ReviewResult,
+  parsedDiff: Map<string, DiffHunk[]>
 ): string {
   const issuesHtml = result.issues
-    .map(
-      (issue) => `
+    .map((issue) => {
+      // Get code snippet for the first location
+      let codeSnippetHtml = "";
+      if (issue.locations.length > 0) {
+        const loc = issue.locations[0];
+        const hunk = getCodeSnippetForLocation(parsedDiff, loc);
+        if (hunk) {
+          codeSnippetHtml = renderCodeSnippet(hunk, loc);
+        }
+      }
+
+      return `
     <div class="issue">
       <div class="issue-header">
         ${getSeverityBadge(issue.severity)}
@@ -414,6 +560,7 @@ function renderReviewHtml(
         </div>`
           : ""
       }
+      ${codeSnippetHtml}
       ${
         issue.why_it_matters
           ? `<div class="issue-why">
@@ -429,8 +576,8 @@ function renderReviewHtml(
           : ""
       }
     </div>
-  `
-    )
+  `;
+    })
     .join("");
 
   const keyPointsHtml =
@@ -451,6 +598,26 @@ function renderReviewHtml(
       ? `<div class="section blockers">
       <h3>Merge Blockers</h3>
       <ul>${result.merge_blockers.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+    </div>`
+      : "";
+
+  const patchSuggestionsHtml =
+    result.patch_suggestions && result.patch_suggestions.length > 0
+      ? `<div class="section">
+      <h3>Suggested Patches</h3>
+      ${result.patch_suggestions
+        .map(
+          (patch) => `
+        <div class="patch">
+          <div class="patch-file">${escapeHtml(patch.file)}</div>
+          ${patch.rationale ? `<div class="patch-rationale">${escapeHtml(patch.rationale)}</div>` : ""}
+          <div class="code-snippet">
+            ${renderUnifiedDiff(patch.unified_diff)}
+          </div>
+        </div>
+      `
+        )
+        .join("")}
     </div>`
       : "";
 
@@ -630,6 +797,94 @@ function renderReviewHtml(
       font-size: 16px;
       font-weight: 600;
     }
+    /* Code snippet styles */
+    .code-snippet {
+      margin-top: 12px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+    .code-header {
+      background: #2d2d2d;
+      padding: 6px 12px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 12px;
+      color: #888;
+      border-bottom: 1px solid #333;
+    }
+    .code-body {
+      background: #1a1a1a;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+    .code-line {
+      display: flex;
+      padding: 0 12px;
+      white-space: pre;
+    }
+    .line-num {
+      color: #555;
+      min-width: 32px;
+      text-align: right;
+      margin-right: 8px;
+      user-select: none;
+    }
+    .line-prefix {
+      color: #888;
+      min-width: 16px;
+      user-select: none;
+    }
+    .line-content {
+      flex: 1;
+    }
+    .line-add {
+      background: rgba(46, 160, 67, 0.15);
+    }
+    .line-add .line-content {
+      color: #7ee787;
+    }
+    .line-add .line-prefix {
+      color: #7ee787;
+    }
+    .line-remove {
+      background: rgba(248, 81, 73, 0.15);
+    }
+    .line-remove .line-content {
+      color: #f85149;
+    }
+    .line-remove .line-prefix {
+      color: #f85149;
+    }
+    .line-context .line-content {
+      color: #8b949e;
+    }
+    .line-hunk {
+      background: rgba(56, 139, 253, 0.1);
+    }
+    .line-hunk .line-content {
+      color: #58a6ff;
+    }
+    /* Patch suggestion styles */
+    .patch {
+      background: #252526;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-left: 3px solid #16a34a;
+    }
+    .patch-file {
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 13px;
+      color: #569cd6;
+      margin-bottom: 8px;
+    }
+    .patch-rationale {
+      color: #a0a0a0;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
   </style>
 </head>
 <body>
@@ -673,6 +928,8 @@ function renderReviewHtml(
     ${result.issues.length > 0 ? issuesHtml : '<div class="no-issues"><div class="no-issues-icon">✓</div><div class="no-issues-text">No issues found!</div></div>'}
   </div>
 
+  ${patchSuggestionsHtml}
+
   ${questionsHtml}
 </body>
 </html>`;
@@ -715,11 +972,14 @@ async function runReview(
       return;
     }
 
+    // Parse diff for code snippets
+    const parsedDiff = parseDiff(diff);
+
     // Request review
     const result = await requestReview(diff, signal);
 
     // Show results
-    p.webview.html = renderReviewHtml(commitInfo, result);
+    p.webview.html = renderReviewHtml(commitInfo, result, parsedDiff);
   } catch (error) {
     if ((error as Error).name === "AbortError") {
       return; // Review was cancelled
