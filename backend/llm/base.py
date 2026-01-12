@@ -1,10 +1,13 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import List, Optional, Sequence, Any
+from typing import List, Optional, Sequence, Any, Type, TypeVar
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage, AIMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from pydantic import BaseModel
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class AdapterChatModel(BaseChatModel):
@@ -59,6 +62,15 @@ class LLMAdapter(ABC):
     async def ainvoke(self, messages: Sequence[BaseMessage]) -> str:
         """Return raw text output from the model."""
         raise NotImplementedError
-    
+
+    async def ainvoke_structured(
+        self, messages: Sequence[BaseMessage], schema: type[T]
+    ) -> T:
+        """
+        Structured output을 사용하여 스키마에 맞는 결과 반환.
+        기본 구현은 NotImplementedError. 지원하는 adapter만 오버라이드.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} does not support structured output")
+
     def as_chat_model(self):
         return AdapterChatModel(self)

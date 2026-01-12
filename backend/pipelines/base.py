@@ -9,6 +9,7 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 
+from backend.config.settings import settings
 from backend.shared.context import run_id_var
 from backend.llm.base import AdapterChatModel
 from backend.llm.invoke import invoke_chain
@@ -74,6 +75,7 @@ class ReviewPipeline(ABC):
                 req=req,
                 diff=chunk_diff,
                 diff_target=diff_target,
+                adapter=adapter,
                 review_chain=review_chain,
                 repair_chain=repair_chain,
                 bad_max_chars=bad_max_chars,
@@ -84,6 +86,7 @@ class ReviewPipeline(ABC):
                 req=req,
                 chunks=chunks,
                 diff_target=diff_target,
+                adapter=adapter,
                 review_chain=review_chain,
                 repair_chain=repair_chain,
                 bad_max_chars=bad_max_chars,
@@ -114,12 +117,21 @@ class ReviewPipeline(ABC):
         req: ReviewRequest,
         diff: str,
         diff_target: str,
+        adapter,
         review_chain: Runnable,
         repair_chain: Runnable,
         bad_max_chars: int,
     ) -> tuple[ReviewResult, bool, str, str | None, str | None]:
         """단일 diff에 대한 리뷰 실행."""
         payload = await self.build_review_payload(req=req, diff=diff, diff_target=diff_target)
+
+        # Structured output 사용 시
+        if settings.use_structured_output:
+            messages = review_chain.first.format_messages(**payload)
+            result = await adapter.ainvoke_structured(messages, ReviewResult)
+            return result, False, "", None, None
+
+        # 기존 방식: 텍스트 파싱 + repair
         msg = await invoke_chain(review_chain, payload)
         content = msg.content or ""
 
@@ -136,6 +148,7 @@ class ReviewPipeline(ABC):
         req: ReviewRequest,
         chunks: List[DiffChunk],
         diff_target: str,
+        adapter,
         review_chain: Runnable,
         repair_chain: Runnable,
         bad_max_chars: int,
@@ -152,6 +165,13 @@ class ReviewPipeline(ABC):
                     diff_target=diff_target,
                     chunk=chunk,
                 )
+
+                # Structured output 사용 시
+                if settings.use_structured_output:
+                    messages = review_chain.first.format_messages(**payload)
+                    return await adapter.ainvoke_structured(messages, ReviewResult)
+
+                # 기존 방식
                 msg = await invoke_chain(review_chain, payload)
                 content = msg.content or ""
 
