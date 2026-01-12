@@ -243,6 +243,31 @@ async def cmd_list(_: argparse.Namespace) -> None:
         print(f"  - {name}: {len(dataset.samples)} samples")
 
 
+def cmd_webapp(args: argparse.Namespace) -> None:
+    """Launch the Streamlit webapp."""
+    import subprocess
+    import sys
+
+    webapp_path = Path(__file__).parent / "webapp" / "app.py"
+
+    # Build streamlit command
+    cmd = [sys.executable, "-m", "streamlit", "run", str(webapp_path)]
+
+    if args.port:
+        cmd.extend(["--server.port", str(args.port)])
+
+    if args.host:
+        cmd.extend(["--server.address", args.host])
+
+    print(f"Launching Evaluation Dashboard...")
+    print(f"  App: {webapp_path}")
+    if args.port:
+        print(f"  Port: {args.port}")
+    print()
+
+    subprocess.run(cmd)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Code Review Bot Evaluation CLI",
@@ -279,6 +304,11 @@ def main():
     # list command
     subparsers.add_parser("list", help="List available datasets")
 
+    # webapp command
+    webapp_parser = subparsers.add_parser("webapp", help="Launch Streamlit dashboard")
+    webapp_parser.add_argument("--port", type=int, default=9022, help="Port number")
+    webapp_parser.add_argument("--host", default="0.0.0.0", help="Host address")
+
     args = parser.parse_args()
 
     # Run command
@@ -292,6 +322,8 @@ def main():
         asyncio.run(cmd_compare(args))
     elif args.command == "list":
         asyncio.run(cmd_list(args))
+    elif args.command == "webapp":
+        cmd_webapp(args)
 
 
 if __name__ == "__main__":

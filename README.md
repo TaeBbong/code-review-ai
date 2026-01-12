@@ -13,8 +13,9 @@ LLM 기반 자동 코드 리뷰 시스템의 백엔드입니다. Git diff를 분
 5. [Variant 시스템](#variant-시스템)
 6. [새로운 Variant 추가하기](#새로운-variant-추가하기)
 7. [성능 평가 시스템](#성능-평가-시스템)
-8. [환경 설정](#환경-설정)
-9. [실행 방법](#실행-방법)
+8. [Evaluation Dashboard (Web UI)](#evaluation-dashboard-web-ui)
+9. [환경 설정](#환경-설정)
+10. [실행 방법](#실행-방법)
 
 ---
 
@@ -81,8 +82,21 @@ backend/
 │   ├── evaluator.py             # 평가 실행기
 │   ├── langsmith_integration.py # LangSmith 연동
 │   ├── cli.py                   # CLI 스크립트
-│   └── datasets/                # 평가 데이터셋
-│       └── v1_initial.yaml      # 초기 데이터셋 (20개 샘플)
+│   ├── datasets/                # 평가 데이터셋
+│   │   └── v1_initial.yaml      # 초기 데이터셋 (20개 샘플)
+│   ├── data/                    # 평가 결과 저장
+│   │   └── runs/                # 실행 결과 JSON 파일 (.gitignore)
+│   └── webapp/                  # Streamlit Web UI
+│       ├── app.py               # 메인 대시보드
+│       ├── utils.py             # 유틸리티 함수
+│       ├── storage/             # JSON 기반 저장소
+│       │   ├── schemas.py       # StoredRun, RunConfig, PromptSnapshot
+│       │   └── run_store.py     # 실행 결과 CRUD
+│       └── pages/               # Streamlit 멀티페이지
+│           ├── 1_Run.py         # 평가 실행
+│           ├── 2_History.py     # 실행 이력
+│           ├── 3_Compare.py     # 비교 분석
+│           └── 4_Samples.py     # 샘플별 상세
 ├── llm/
 │   ├── base.py                  # LLMAdapter ABC, AdapterChatModel
 │   ├── provider.py              # get_llm_adapter() 팩토리
@@ -945,6 +959,103 @@ uv run python -m backend.evaluation.cli upload v1_initial
 uv run python -m backend.evaluation.cli run-langsmith \
     code-review-eval-v1_initial g1-mapreduce
 ```
+
+---
+
+## Evaluation Dashboard (Web UI)
+
+Streamlit 기반의 평가 대시보드입니다. CLI 대신 웹 UI로 평가를 실행하고 결과를 추적할 수 있습니다.
+
+### 주요 기능
+
+| 페이지 | 기능 |
+|--------|------|
+| **Run** | 데이터셋/Variant 선택, 파라미터 오버라이드, 평가 실행 |
+| **History** | 실행 이력 조회, 설정 스냅샷 확인, JSON 내보내기 |
+| **Compare** | 다중 실행 비교, 메트릭 차트, 설정 diff |
+| **Samples** | 샘플별 TP/FP/FN 상세, 이슈 매칭 분석 |
+
+### 실행 방법
+
+```bash
+# CLI에서 실행
+uv run python -m backend.evaluation.cli webapp
+
+# 옵션 지정
+uv run python -m backend.evaluation.cli webapp --port 8502 --host 0.0.0.0
+
+# 또는 직접 Streamlit 실행
+streamlit run backend/evaluation/webapp/app.py
+```
+
+### 추적되는 정보
+
+각 평가 실행 시 다음 정보가 자동으로 저장됩니다:
+
+**실행 설정:**
+- Variant ID, 데이터셋 이름
+- Preset 파라미터 전체 (YAML에서 로드된 값)
+- 사용자 오버라이드 파라미터
+- 동시성 설정
+
+**프롬프트 스냅샷:**
+- 프롬프트 팩 ID
+- System/User 프롬프트 해시 (변경 추적용)
+- 전체 프롬프트 내용 (선택적)
+
+**결과:**
+- 전체 메트릭 (Precision, Recall, F1)
+- 카테고리별 breakdown
+- 샘플별 상세 (TP/FP/FN, 이슈 매칭)
+- 실행 시간, 소요 시간
+
+### 저장 위치
+
+실행 결과는 `backend/evaluation/data/runs/` 디렉토리에 JSON 파일로 저장됩니다.
+이 디렉토리는 `.gitignore`에 포함되어 있어 Git에 추적되지 않습니다.
+
+```
+backend/evaluation/data/runs/
+├── 20260112-160530-abc123.json
+├── 20260112-161045-def456.json
+└── ...
+```
+
+### 화면 구성
+
+#### Run 페이지
+```
+┌─────────────────────────────────────────┐
+│ Dataset: [v1_initial ▼]                 │
+│ Variant: [g1-mapreduce ▼]               │
+├─────────────────────────────────────────┤
+│ Parameters                              │
+│   max_concurrency: [4]                  │
+│   max_symbols: [12]                     │
+├─────────────────────────────────────────┤
+│ [▶ Run Evaluation]                      │
+├─────────────────────────────────────────┤
+│ Progress: ████████░░ 8/20               │
+│ Current F1: 72.0%                       │
+└─────────────────────────────────────────┘
+```
+
+#### History 페이지
+- 필터링: Variant, Dataset, 날짜 범위
+- 실행 목록: Run ID, 메트릭, 소요 시간
+- 상세 보기: 설정 스냅샷, 프롬프트 내용, 카테고리별 breakdown
+- 내보내기: JSON 다운로드
+
+#### Compare 페이지
+- 2-5개 실행 선택하여 비교
+- 메트릭 비교 차트 (Precision, Recall, F1)
+- 설정 diff (파라미터 변경, 프롬프트 변경 여부)
+
+#### Samples 페이지
+- 샘플별 결과 테이블 (F1 낮은 순으로 정렬)
+- Expected vs Predicted 이슈 비교
+- 이슈 매칭 상세 (어떤 기준으로 매칭되었는지)
+- 원본 diff, 전체 응답 JSON 확인
 
 ---
 
