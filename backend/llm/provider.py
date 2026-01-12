@@ -4,9 +4,18 @@ from backend.config.settings import settings
 from backend.llm.base import LLMAdapter
 from backend.llm.ollama import OllamaAdapter
 from backend.llm.openai_compat import OpenAICompatAdapter
+from backend.llm.openai_native import OpenAINativeAdapter
 
 
 def get_llm_adapter() -> LLMAdapter:
+    """
+    Factory function to get the appropriate LLM adapter based on settings.
+
+    Supported providers:
+    - "ollama": Local Ollama server
+    - "openai_compat": OpenAI-compatible servers (vLLM, LocalAI, etc.)
+    - "openai": Native OpenAI API (GPT-4o, GPT-4-turbo, etc.)
+    """
     if settings.llm_provider == "ollama":
         return OllamaAdapter(
             model=settings.ollama_model,
@@ -19,6 +28,13 @@ def get_llm_adapter() -> LLMAdapter:
             model=settings.openai_compat_model,
             base_url=settings.openai_compat_base_url,
             api_key=settings.openai_compat_api_key,
+            temperature=settings.temperature,
+            max_tokens=settings.max_tokens,
+        )
+    if settings.llm_provider == "openai":
+        return OpenAINativeAdapter(
+            model=settings.openai_model,
+            api_key=settings.openai_api_key,
             temperature=settings.temperature,
             max_tokens=settings.max_tokens,
         )
