@@ -3,12 +3,17 @@ Scoring logic for evaluation.
 
 Handles matching between expected issues and predicted issues,
 and calculates precision/recall/F1 metrics.
+
+Matching Strategy (Relaxed):
+- Category + Severity are required (hard constraints)
+- Keywords and semantic similarity are soft signals that contribute to a match score
+- An issue matches if it captures the "essence" of the expected problem
 """
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 from backend.domain.schemas.review import (
@@ -26,6 +31,18 @@ from backend.evaluation.schemas import (
     CategoryScore,
     EvalRunResult,
 )
+
+
+# =============================================================================
+# Configuration
+# =============================================================================
+
+# Semantic matching thresholds
+SEMANTIC_SIMILARITY_THRESHOLD = 0.4  # Minimum similarity to consider a match
+KEYWORD_BOOST = 0.2  # Bonus score for keyword matches
+
+# Whether to use semantic matching (can be disabled for faster tests)
+USE_SEMANTIC_MATCHING = True
 
 
 # =============================================================================
@@ -56,14 +73,10 @@ class MatchResult:
     matched: bool
     matched_issue_id: Optional[str] = None
     match_score: float = 0.0
-    details: dict = None
-
-    def __post_init__(self):
-        if self.details is None:
-            self.details = {}
+    details: dict = field(default_factory=dict)
 
 
-def _keyword_match(text: str, keywords: list[str]) -> bool:
+def _keyword_match(text: str, keywords: list[str]) -> tuple[bool, float]:
     """
     Check if any keyword is found in text (case-insensitive).
 
@@ -72,13 +85,62 @@ def _keyword_match(text: str, keywords: list[str]) -> bool:
         keywords: Keywords to search for (OR condition)
 
     Returns:
-        True if any keyword is found
+        Tuple of (any_matched, match_ratio)
     """
     if not keywords:
-        return True  # No keywords = no constraint
+        return True, 1.0  # No keywords = no constraint
 
     text_lower = text.lower()
-    return any(kw.lower() in text_lower for kw in keywords)
+    matches = sum(1 for kw in keywords if kw.lower() in text_lower)
+
+    return matches > 0, matches / len(keywords)
+
+
+def _semantic_match(
+    predicted_text: str,
+    expected_keywords: list[str],
+    rationale: str = "",
+) -> tuple[bool, float]:
+    """
+    Check semantic similarity between predicted text and expected content.
+
+    Args:
+        predicted_text: The predicted issue title/description
+        expected_keywords: Keywords that describe the expected issue
+        rationale: Additional context about what should be found
+
+    Returns:
+        Tuple of (matched, similarity_score)
+    """
+    if not USE_SEMANTIC_MATCHING:
+        return False, 0.0
+
+    if not expected_keywords and not rationale:
+        return True, 1.0
+
+    try:
+        from backend.evaluation.semantic_matcher import get_semantic_matcher
+        matcher = get_semantic_matcher()
+
+        # Build reference text from keywords and rationale
+        reference_parts = []
+        if expected_keywords:
+            reference_parts.append(" ".join(expected_keywords))
+        if rationale:
+            reference_parts.append(rationale)
+
+        reference_text = " ".join(reference_parts)
+
+        if not reference_text.strip() or not predicted_text.strip():
+            return False, 0.0
+
+        similarity = matcher.similarity(predicted_text, reference_text)
+
+        return similarity >= SEMANTIC_SIMILARITY_THRESHOLD, similarity
+
+    except ImportError:
+        # sentence-transformers not installed
+        return False, 0.0
 
 
 def _file_pattern_match(file_path: str, pattern: Optional[str]) -> bool:
@@ -129,13 +191,20 @@ def match_issue(
     """
     Check if a predicted issue matches an expected issue.
 
-    Matching criteria (all must pass):
-    1. Category must match
-    2. Severity must be >= minimum
-    3. Title keywords (OR - at least one must match)
-    4. Description keywords (OR - at least one must match)
-    5. File pattern (if specified)
-    6. Line number (if specified, with tolerance)
+    Relaxed Matching Strategy:
+    - Hard constraints (must pass):
+      1. Category must match
+      2. Severity must be >= minimum
+
+    - Soft signals (contribute to match score):
+      3. Keyword matching (title/description)
+      4. Semantic similarity (title+description vs keywords+rationale)
+      5. File pattern (if specified)
+      6. Line number (if specified)
+
+    An issue is considered a match if:
+    - Hard constraints pass AND
+    - (Keywords match OR semantic similarity >= threshold)
 
     Args:
         expected: Expected issue from ground truth
@@ -147,11 +216,20 @@ def match_issue(
     details = {
         "category_match": False,
         "severity_match": False,
-        "title_keywords_match": False,
-        "description_keywords_match": False,
+        "title_keyword_match": False,
+        "title_keyword_ratio": 0.0,
+        "desc_keyword_match": False,
+        "desc_keyword_ratio": 0.0,
+        "semantic_match": False,
+        "semantic_score": 0.0,
         "file_match": False,
         "line_match": False,
+        "final_score": 0.0,
     }
+
+    # ===================
+    # Hard constraints
+    # ===================
 
     # 1. Category must match
     if predicted.category != expected.category:
@@ -163,50 +241,90 @@ def match_issue(
         return MatchResult(matched=False, details=details)
     details["severity_match"] = True
 
-    # 3. Title keywords (OR condition)
-    if not _keyword_match(predicted.title, expected.title_keywords):
-        return MatchResult(matched=False, details=details)
-    details["title_keywords_match"] = True
+    # ===================
+    # Soft signals
+    # ===================
 
-    # 4. Description keywords (OR condition)
-    description_text = f"{predicted.description} {predicted.why_it_matters}"
-    if not _keyword_match(description_text, expected.description_keywords):
-        return MatchResult(matched=False, details=details)
-    details["description_keywords_match"] = True
+    # 3. Keyword matching
+    title_kw_match, title_kw_ratio = _keyword_match(
+        predicted.title, expected.title_keywords
+    )
+    details["title_keyword_match"] = title_kw_match
+    details["title_keyword_ratio"] = title_kw_ratio
+
+    description_text = f"{predicted.title} {predicted.description} {predicted.why_it_matters}"
+    desc_kw_match, desc_kw_ratio = _keyword_match(
+        description_text, expected.description_keywords
+    )
+    details["desc_keyword_match"] = desc_kw_match
+    details["desc_keyword_ratio"] = desc_kw_ratio
+
+    # 4. Semantic similarity
+    semantic_match, semantic_score = _semantic_match(
+        predicted_text=description_text,
+        expected_keywords=expected.title_keywords + expected.description_keywords,
+        rationale=expected.rationale,
+    )
+    details["semantic_match"] = semantic_match
+    details["semantic_score"] = semantic_score
 
     # 5. File pattern (if specified)
-    file_matched = False
+    file_matched = True
     if expected.file_pattern:
+        file_matched = False
         for loc in predicted.locations:
             if _file_pattern_match(loc.file, expected.file_pattern):
                 file_matched = True
                 break
-        if not file_matched and predicted.locations:
-            return MatchResult(matched=False, details=details)
-    else:
-        file_matched = True
     details["file_match"] = file_matched
 
     # 6. Line number (if specified)
-    line_matched = False
+    line_matched = True
     if expected.line_start is not None:
+        line_matched = False
         for loc in predicted.locations:
             if _line_match(loc.line_start, expected.line_start, expected.line_tolerance):
                 line_matched = True
                 break
-        if not line_matched and predicted.locations:
-            return MatchResult(matched=False, details=details)
-    else:
-        line_matched = True
     details["line_match"] = line_matched
 
-    # All criteria passed
-    return MatchResult(
-        matched=True,
-        matched_issue_id=predicted.id,
-        match_score=1.0,
-        details=details,
-    )
+    # ===================
+    # Final decision
+    # ===================
+
+    # Calculate combined score
+    # - Keyword matches contribute
+    # - Semantic similarity contributes
+    # - File/line matches are bonuses
+
+    keyword_score = max(title_kw_ratio, desc_kw_ratio) if (title_kw_match or desc_kw_match) else 0.0
+
+    # Combine keyword and semantic scores
+    # Use max to allow either approach to succeed
+    content_score = max(keyword_score, semantic_score)
+
+    # Add bonuses for location matches
+    if file_matched and expected.file_pattern:
+        content_score += 0.1
+    if line_matched and expected.line_start is not None:
+        content_score += 0.1
+
+    details["final_score"] = min(content_score, 1.0)
+
+    # Match if:
+    # - Any keyword matched, OR
+    # - Semantic similarity is above threshold
+    content_matched = title_kw_match or desc_kw_match or semantic_match
+
+    if content_matched:
+        return MatchResult(
+            matched=True,
+            matched_issue_id=predicted.id,
+            match_score=details["final_score"],
+            details=details,
+        )
+
+    return MatchResult(matched=False, match_score=0.0, details=details)
 
 
 def find_best_match(
@@ -225,15 +343,19 @@ def find_best_match(
     Returns:
         Tuple of (matched issue, match result) or None if no match
     """
+    best_match: Optional[tuple[Issue, MatchResult]] = None
+    best_score = 0.0
+
     for pred in predictions:
         if pred.id in already_matched:
             continue
 
         result = match_issue(expected, pred)
-        if result.matched:
-            return pred, result
+        if result.matched and result.match_score > best_score:
+            best_match = (pred, result)
+            best_score = result.match_score
 
-    return None
+    return best_match
 
 
 # =============================================================================
