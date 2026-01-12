@@ -1,11 +1,16 @@
 {
-  "name": "commit-toggle-on-commit",
-  "displayName": "Commit Toggle On Commit (Minimal)",
-  "version": "0.0.2",
-  "publisher": "your-name",
+  "name": "code-review-bot",
+  "displayName": "Code Review Bot",
+  "description": "AI-powered code review on every commit",
+  "version": "0.1.0",
+  "publisher": "code-review-bot",
   "engines": {
     "vscode": "^1.86.0"
   },
+  "categories": [
+    "Other",
+    "Linters"
+  ],
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -13,14 +18,52 @@
   "contributes": {
     "commands": [
       {
-        "command": "commitToggleOnCommit.togglePanel",
-        "title": "Commit Toggle: Toggle Panel"
+        "command": "codeReviewBot.reviewLastCommit",
+        "title": "Code Review: Review Last Commit"
+      },
+      {
+        "command": "codeReviewBot.showPanel",
+        "title": "Code Review: Show Panel"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Code Review Bot",
+      "properties": {
+        "codeReviewBot.apiUrl": {
+          "type": "string",
+          "default": "http://192.168.0.100:9021",
+          "description": "Backend API URL for the code review service"
+        },
+        "codeReviewBot.variantId": {
+          "type": "string",
+          "default": "g2-iterative",
+          "enum": [
+            "g0-baseline",
+            "g1-mapreduce",
+            "g2-iterative",
+            "g3-multipersona"
+          ],
+          "enumDescriptions": [
+            "G0 Baseline: Simple diff → LLM → JSON",
+            "G1 MapReduce: File-based split + ripgrep evidence",
+            "G2 Iterative: 2-pass review for false positive filtering",
+            "G3 MultiPersona: Multiple reviewer perspectives (Security/Performance/Maintainability)"
+          ],
+          "description": "Review variant to use"
+        },
+        "codeReviewBot.autoReviewOnCommit": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically review code when a commit is made via VS Code"
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "tsc -p .",
-    "watch": "tsc -p . -w"
+    "watch": "tsc -p . -w",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
