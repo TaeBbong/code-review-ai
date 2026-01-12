@@ -76,7 +76,8 @@ backend/
 ├── evaluation/                  # 성능 평가 시스템
 │   ├── schemas.py               # 평가 스키마 (EvalSample, SampleScore 등)
 │   ├── loader.py                # YAML 데이터셋 로더
-│   ├── scorer.py                # 매칭 및 스코어링 로직
+│   ├── scorer.py                # 매칭 및 스코어링 로직 (semantic matching 포함)
+│   ├── semantic_matcher.py      # 임베딩 기반 의미 유사도 매칭
 │   ├── evaluator.py             # 평가 실행기
 │   ├── langsmith_integration.py # LangSmith 연동
 │   ├── cli.py                   # CLI 스크립트
@@ -896,14 +897,28 @@ print(f"F1 Score: {result.overall_f1:.2%}")
 
 ### 이슈 매칭 로직
 
-예상 이슈와 예측 이슈의 매칭 기준:
+예상 이슈와 예측 이슈의 매칭은 **Relaxed Matching** 전략을 사용합니다. 핵심을 짚는 리뷰인지 평가하는 것이 목표입니다.
 
-1. **카테고리 일치** (필수)
-2. **심각도 >= 최소 심각도** (필수)
-3. **제목 키워드 포함** (OR 조건 - 하나라도 포함되면 OK)
-4. **설명 키워드 포함** (OR 조건)
+**Hard Constraints (필수):**
+1. **카테고리 일치**
+2. **심각도 >= 최소 심각도**
+
+**Soft Signals (유연한 매칭):**
+3. **키워드 매칭** - 제목/설명에 키워드 포함 (OR 조건)
+4. **Semantic Similarity** - 임베딩 기반 의미 유사도 (threshold: 0.4)
 5. **파일 패턴 매칭** (선택적)
 6. **라인 번호 ±tolerance** (선택적, 기본 ±3)
+
+**매칭 성공 조건:**
+```
+(Category 일치) AND (Severity >= min) AND (키워드 일치 OR semantic_score >= 0.4)
+```
+
+**Semantic Matching:**
+- `sentence-transformers`의 `all-MiniLM-L6-v2` 모델 사용
+- 첫 평가 실행 시 모델 lazy loading (1-2초 소요)
+- 키워드가 정확히 일치하지 않아도 의미적으로 유사하면 매칭
+- 예: "abs() function removed" ↔ "missing logic" (semantic similarity로 매칭)
 
 ### LangSmith 연동 (선택적)
 
