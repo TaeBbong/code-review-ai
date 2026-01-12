@@ -1,0 +1,15 @@
+Review the following git diff. This is pass {review_pass} of multiple independent reviews.
+Be thorough - your findings will be aggregated with other reviews.
+
+{format_instructions}
+
+variant_id: {variant_id}
+
+Focus on:
+1. Functional bugs (correctness issues, logic errors)
+2. Security vulnerabilities
+3. Performance problems
+4. Any issue that could cause runtime failures
+
+git diff:
+{diff}

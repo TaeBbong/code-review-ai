@@ -1,0 +1,11 @@
+Fix your previous output to match the required JSON schema.
+
+{format_instructions}
+
+Rules:
+- Return ONLY JSON. No markdown. No commentary.
+- Do NOT add extra keys.
+- Ensure correct types (e.g., summary is an object; test_suggestions is a list of objects).
+
+Bad output:
+{bad}

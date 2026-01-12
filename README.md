@@ -41,7 +41,9 @@ backend/
 │   │       │   └── ...
 │   │       ├── G2-iterative/
 │   │       │   └── ...
-│   │       └── G3-multipersona/
+│   │       ├── G3-multipersona/
+│   │       │   └── ...
+│   │       └── G4-multireview/
 │   │           └── ...
 │   ├── schemas/
 │   │   ├── review.py            # Pydantic 스키마 (Request/Response)
@@ -61,12 +63,14 @@ backend/
 │   │   ├── g0-baseline.yaml
 │   │   ├── g1-mapreduce.yaml
 │   │   ├── g2-iterative.yaml
-│   │   └── g3-multipersona.yaml
+│   │   ├── g3-multipersona.yaml
+│   │   └── g4-multireview.yaml
 │   └── variants/                # 파이프라인 구현체
 │       ├── g0_baseline.py       # 단순 diff → LLM
 │       ├── g1_mapreduce.py      # 파일별 분할 + evidence 수집
 │       ├── g2_iterative.py      # 2-pass 오탐 필터링
-│       └── g3_multipersona.py   # 다중 관점 병렬 리뷰
+│       ├── g3_multipersona.py   # 다중 관점 병렬 리뷰
+│       └── g4_multireview.py    # N회 독립 리뷰 → LLM 집계
 ├── evaluation/                  # 성능 평가 시스템
 │   ├── schemas.py               # 평가 스키마 (EvalSample, SampleScore 등)
 │   ├── loader.py                # YAML 데이터셋 로더
@@ -432,6 +436,7 @@ Variant는 **프롬프트 팩 + 파이프라인**의 조합입니다.
 | `g1-mapreduce` | `G1-mapreduce` | `MapReducePipeline` | 파일별 분할 + ripgrep evidence 수집 |
 | `g2-iterative` | `G2-iterative` | `IterativeRefinementPipeline` | 2-pass 리뷰로 오탐 필터링 |
 | `g3-multipersona` | `G3-multipersona` | `MultiPersonaPipeline` | 다중 관점 병렬 리뷰 |
+| `g4-multireview` | `G4-multireview` | `MultiReviewPipeline` | N회 독립 리뷰 → LLM 집계 (SWR-Bench 논문 기반) |
 
 #### G1-mapreduce 상세
 
@@ -497,6 +502,34 @@ params:
   max_concurrency: 3     # 병렬 LLM 호출 수
 ```
 
+#### G4-multireview 상세
+
+G4-multireview는 **SWR-Bench 논문**의 Multi-Review Aggregation 전략을 구현합니다.
+
+**핵심 원리:**
+- LLM은 동일 프롬프트로도 실행마다 다른 이슈를 탐지 (무작위성)
+- 여러 번 독립적으로 리뷰 → 더 많은 실제 결함 발견 (Recall ↑)
+- LLM 기반 집계로 중복 제거 및 신뢰도 평가 (Precision 유지)
+- 논문에서 F1 점수 43.67% 향상, Recall 118.83% 향상 입증
+
+**동작 방식:**
+1. **N회 독립 리뷰**: 동일 diff에 대해 `num_reviews`회 병렬 리뷰 수행
+2. **LLM 기반 집계**: 여러 리뷰 결과를 분석하여 중복 제거
+   - 반복 발견된 이슈 → 높은 신뢰도 부여
+   - 한 번만 발견된 이슈도 유효하면 포함
+3. **최종 결과 생성**: 집계된 이슈 목록 반환
+
+**출력 특징:**
+- summary.key_points에 집계 정보: `Aggregated from N independent reviews (M raw issues → K final)`
+
+```yaml
+# g4-multireview.yaml 설정 예시
+params:
+  num_reviews: 5         # 독립 리뷰 횟수 (논문: 5-10회 권장)
+  max_concurrency: 5     # 병렬 LLM 호출 수
+  aggregation_mode: llm  # "llm" (지능적 집계) 또는 "simple" (단순 합산)
+```
+
 ### Variant 선택 우선순위
 
 1. 요청의 `variant_id` 파라미터
@@ -510,7 +543,7 @@ params:
 운영 환경에서 특정 variant만 허용하려면:
 
 ```bash
-REVIEW_ALLOWED_VARIANTS_RAW="g0-baseline,g1-mapreduce,g2-iterative,g3-multipersona"
+REVIEW_ALLOWED_VARIANTS_RAW="g0-baseline,g1-mapreduce,g2-iterative,g3-multipersona,g4-multireview"
 ```
 
 허용되지 않은 variant 요청 시 기본 variant로 폴백됩니다.
@@ -767,7 +800,7 @@ uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce
 
 # 여러 variant 비교
 uv run python -m backend.evaluation.cli compare v1_initial \
-    g0-baseline g1-mapreduce g2-iterative g3-multipersona
+    g0-baseline g1-mapreduce g2-iterative g3-multipersona g4-multireview
 
 # 결과를 JSON으로 저장
 uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce -o result.json
