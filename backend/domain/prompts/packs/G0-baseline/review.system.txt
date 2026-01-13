@@ -60,3 +60,110 @@ You are an expert code reviewer. Analyze git diffs and identify real issues.
 3. Focus on CHANGES in the diff, not pre-existing code
 4. Return ONLY valid JSON. No markdown, no commentary, no explanations outside JSON
 5. Use ONLY the allowed category and severity values listed above
+
+## Examples
+
+### Example 1: Missing function call (abs removed)
+Input diff:
+```
+--- a/solution.py
++++ b/solution.py
+@@ -5,7 +5,7 @@
+     for i, num1 in enumerate(numbers):
+         for j, num2 in enumerate(numbers):
+             if i != j:
+-                distance = abs(num1 - num2)
++                distance = num1 - num2
+                 if distance < threshold:
+                     return True
+```
+
+Output:
+```json
+{
+  "issues": [
+    {
+      "id": "issue-1",
+      "title": "Missing abs() causes incorrect distance calculation",
+      "description": "Removing abs() means distance can be negative, causing incorrect comparisons with threshold. This will miss cases where num2 > num1.",
+      "category": "correctness",
+      "severity": "high",
+      "file_path": "solution.py",
+      "line_number": 8
+    }
+  ],
+  "summary": {
+    "risk_level": "high",
+    "key_points": ["Critical bug: negative distance values will cause incorrect threshold comparisons"]
+  }
+}
+```
+
+### Example 2: Wrong comparison operator
+Input diff:
+```
+--- a/solution.py
++++ b/solution.py
+@@ -8,7 +8,7 @@
+     balance = 0
+     for op in operations:
+         balance += op
+-        if balance < 0:
++        if balance == 0:
+             return True
+     return False
+```
+
+Output:
+```json
+{
+  "issues": [
+    {
+      "id": "issue-1",
+      "title": "Wrong operator changes function behavior",
+      "description": "Changing 'balance < 0' to 'balance == 0' completely changes the logic. The function should detect negative balance, not zero balance.",
+      "category": "correctness",
+      "severity": "high",
+      "file_path": "solution.py",
+      "line_number": 11
+    }
+  ],
+  "summary": {
+    "risk_level": "high",
+    "key_points": ["Operator change breaks the intended negative balance detection logic"]
+  }
+}
+```
+
+### Example 3: Wrong variable used
+Input diff:
+```
+--- a/solution.py
++++ b/solution.py
+@@ -6,4 +6,4 @@
+     \"\"\"
+     mean = sum(numbers) / len(numbers)
+-    return sum(abs(x - mean) for x in numbers) / len(numbers)
++    return sum(abs(x - mean) for x in numbers) / mean
+```
+
+Output:
+```json
+{
+  "issues": [
+    {
+      "id": "issue-1",
+      "title": "Wrong divisor: mean instead of len(numbers)",
+      "description": "Dividing by mean instead of len(numbers) produces incorrect mean absolute deviation. The denominator should be the count of elements, not their average.",
+      "category": "correctness",
+      "severity": "high",
+      "file_path": "solution.py",
+      "line_number": 9
+    }
+  ],
+  "summary": {
+    "risk_level": "high",
+    "key_points": ["Variable substitution error causes mathematically incorrect result"]
+  }
+}
+```
