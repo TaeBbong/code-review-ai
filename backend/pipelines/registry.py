@@ -103,12 +103,22 @@ def get_pipeline(variant_id: str):
     preset = load_preset(variant_id)
     prompt_pack_id = preset.get("prompt_pack") or variant_id
 
-    # Load prompt pack
-    prompt_registry = PromptPackRegistry(
-        packs_dir=_PACKS_DIR,
-        default_variant=settings.review_default_variant,
-        allowed_variants=settings.review_allowed_variants,
-    )
+    # If preset explicitly specifies a prompt_pack, bypass allowed_variants check
+    # This allows presets to use any pack (e.g., nofs variants for evaluation)
+    if preset.get("prompt_pack"):
+        # Explicit pack override - no restriction
+        prompt_registry = PromptPackRegistry(
+            packs_dir=_PACKS_DIR,
+            default_variant=settings.review_default_variant,
+            allowed_variants=None,
+        )
+    else:
+        # Default behavior - respect allowed_variants
+        prompt_registry = PromptPackRegistry(
+            packs_dir=_PACKS_DIR,
+            default_variant=settings.review_default_variant,
+            allowed_variants=settings.review_allowed_variants,
+        )
     pack = prompt_registry.get(prompt_pack_id)
 
     # Load pipeline spec and build

@@ -122,6 +122,11 @@ class RunSummary(BaseModel):
 
     tags: list[str] = Field(default_factory=list)
 
+    # Multi-review info
+    has_round_data: bool = Field(
+        default=False, description="Whether this run has round-by-round data (g4-multireview)"
+    )
+
     @classmethod
     def from_stored_run(cls, run: StoredRun) -> "RunSummary":
         """Create summary from full stored run."""
@@ -136,4 +141,5 @@ class RunSummary(BaseModel):
             overall_recall=run.result.overall_recall,
             overall_f1=run.result.overall_f1,
             tags=run.tags,
+            has_round_data=bool(run.result.round_predictions),
         )

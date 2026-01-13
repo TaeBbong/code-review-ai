@@ -96,7 +96,6 @@ def get_prompt_pack(variant_id: str) -> dict[str, str]:
         Dict with pack_id, review_system, review_user, etc.
     """
     from backend.domain.prompts.registry import PromptPackRegistry
-    from backend.config.settings import settings
     from backend.pipelines.registry import load_preset
 
     packs_dir = Path(__file__).parent.parent.parent / "domain" / "prompts" / "packs"
@@ -108,10 +107,12 @@ def get_prompt_pack(variant_id: str) -> dict[str, str]:
     except FileNotFoundError:
         prompt_pack_id = variant_id
 
+    # Note: No allowed_variants restriction for evaluation webapp
+    # We want to be able to load any prompt pack for testing/comparison
     registry = PromptPackRegistry(
         packs_dir=packs_dir,
-        default_variant=settings.review_default_variant,
-        allowed_variants=settings.review_allowed_variants,
+        default_variant="g0-baseline",
+        allowed_variants=None,  # Allow all packs
     )
 
     pack = registry.get(prompt_pack_id)

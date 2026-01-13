@@ -331,3 +331,9 @@ class EvalRunResult(BaseModel):
         default_factory=dict,
         description="샘플 ID -> ReviewResult 매핑"
     )
+
+    # Multi-review 라운드별 결과 (g4-multireview용)
+    round_predictions: Dict[str, List[ReviewResult]] = Field(
+        default_factory=dict,
+        description="샘플 ID -> 각 라운드 ReviewResult 리스트 (g4-multireview에서만 사용)"
+    )

@@ -178,6 +178,10 @@ def _show_run_details(store, run_id: str):
                 })
             st.dataframe(cat_data, use_container_width=True, hide_index=True)
 
+    # Round-by-round results (for g4-multireview)
+    if run.result.round_predictions:
+        _show_round_details(run)
+
     # Tags and notes
     with st.expander("🏷️ Tags & Notes", expanded=False):
         # Tags editor
@@ -234,6 +238,113 @@ def _show_run_details(store, run_id: str):
             store.delete(run_id)
             st.success(f"Deleted run: {run_id}")
             st.rerun()
+
+
+def _show_round_details(run):
+    """Show round-by-round results for multi-review runs."""
+    from backend.evaluation.webapp.storage.schemas import StoredRun
+
+    round_predictions = run.result.round_predictions
+    if not round_predictions:
+        return
+
+    with st.expander("🔄 Round-by-Round Results (Multi-Review)", expanded=False):
+        st.caption(
+            "Each sample was reviewed multiple times independently. "
+            "Compare what each round found before aggregation."
+        )
+
+        # Sample selector
+        sample_ids = list(round_predictions.keys())
+        selected_sample = st.selectbox(
+            "Select Sample",
+            options=sample_ids,
+            help="Choose a sample to view its round-by-round results",
+            key="round_sample_selector",
+        )
+
+        if selected_sample and selected_sample in round_predictions:
+            rounds = round_predictions[selected_sample]
+            num_rounds = len(rounds)
+
+            st.subheader(f"Sample: `{selected_sample}` ({num_rounds} rounds)")
+
+            # Show aggregated result for comparison
+            if selected_sample in run.result.predictions:
+                final_result = run.result.predictions[selected_sample]
+                st.markdown("**Final Aggregated Result:**")
+                st.markdown(f"- Issues: **{len(final_result.issues)}**")
+                st.markdown(f"- Risk Level: **{final_result.summary.overall_risk.value}**")
+
+            st.divider()
+
+            # Round comparison tabs
+            if num_rounds > 0:
+                tab_labels = [f"Round {i+1}" for i in range(num_rounds)]
+                tabs = st.tabs(tab_labels)
+
+                for i, tab in enumerate(tabs):
+                    with tab:
+                        round_result = rounds[i]
+                        _show_single_round(round_result, i + 1)
+
+            # Summary comparison table
+            st.divider()
+            st.subheader("Round Comparison")
+
+            comparison_data = []
+            for i, round_result in enumerate(rounds, 1):
+                issue_titles = [iss.title[:50] + "..." if len(iss.title) > 50 else iss.title
+                               for iss in round_result.issues]
+                comparison_data.append({
+                    "Round": i,
+                    "Issues Found": len(round_result.issues),
+                    "Risk Level": round_result.summary.overall_risk.value,
+                    "Issue Titles": ", ".join(issue_titles) if issue_titles else "(none)",
+                })
+
+            st.dataframe(comparison_data, use_container_width=True, hide_index=True)
+
+            # Check consistency
+            issue_counts = [len(r.issues) for r in rounds]
+            if len(set(issue_counts)) > 1:
+                st.info(
+                    f"⚠️ Issue counts vary across rounds: {issue_counts}. "
+                    "This is expected with LLM variability (even at temperature=0)."
+                )
+            else:
+                st.success(
+                    f"✅ All {num_rounds} rounds found the same number of issues: {issue_counts[0]}"
+                )
+
+
+def _show_single_round(round_result, round_num: int):
+    """Display a single round's review result."""
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("Issues Found", len(round_result.issues))
+
+    with col2:
+        st.metric("Risk Level", round_result.summary.overall_risk.value)
+
+    if round_result.issues:
+        st.markdown("**Issues:**")
+        for issue in round_result.issues:
+            severity_emoji = {
+                "blocker": "🔴",
+                "high": "🟠",
+                "medium": "🟡",
+                "low": "🟢",
+            }.get(issue.severity.value, "⚪")
+
+            with st.container():
+                st.markdown(f"{severity_emoji} **{issue.title}**")
+                st.caption(f"Category: {issue.category.value} | Severity: {issue.severity.value}")
+                if issue.description:
+                    st.markdown(f"> {issue.description[:200]}..." if len(issue.description) > 200 else f"> {issue.description}")
+    else:
+        st.info("No issues found in this round.")
 
 
 if __name__ == "__main__":

@@ -288,23 +288,76 @@ def _run_evaluation(
             current_scores.append(score)
             update_progress_display()
 
+        # Create pipeline once for reuse
+        pipeline = get_pipeline(variant_id)
+
+        # Track round results for g4-multireview
+        round_predictions: dict[str, list] = {}
+        is_multireview = hasattr(pipeline, "last_round_results")
+
         # Create async review function
         async def review_fn(diff: str, vid: str):
-            pipeline = get_pipeline(vid)
             req = ReviewRequest(diff=diff, variant_id=vid)
-            return await pipeline.run(req)
+            result = await pipeline.run(req)
+            return result
+
+        # Custom evaluation loop to capture round results
+        async def run_with_round_capture():
+            from backend.evaluation.scorer import (
+                score_sample,
+                aggregate_by_category,
+                calculate_overall_metrics,
+            )
+            import uuid
+            from datetime import datetime, timezone as tz
+
+            run_id = str(uuid.uuid4())[:8]
+            samples = evaluator.dataset.samples
+            predictions = {}
+            sample_scores = []
+
+            for sample in samples:
+                try:
+                    result = await review_fn(sample.input.diff, variant_id)
+                    predictions[sample.id] = result
+
+                    # Capture round results for multireview pipeline
+                    if is_multireview and pipeline.last_round_results:
+                        round_predictions[sample.id] = list(pipeline.last_round_results)
+
+                    score = score_sample(sample, result)
+                    sample_scores.append(score)
+                    on_sample_complete(sample.id, score)
+
+                except Exception as e:
+                    print(f"Error evaluating sample {sample.id}: {e}")
+
+            category_scores = aggregate_by_category(samples, sample_scores)
+            overall = calculate_overall_metrics(sample_scores)
+
+            from backend.evaluation.schemas import EvalRunResult
+            return EvalRunResult(
+                run_id=run_id,
+                dataset_name=evaluator.dataset.name,
+                variant_id=variant_id,
+                evaluated_at=datetime.now(tz.utc).isoformat(),
+                sample_scores=sample_scores,
+                category_scores=category_scores,
+                total_samples=len(sample_scores),
+                total_tp=overall["total_tp"],
+                total_fp=overall["total_fp"],
+                total_fn=overall["total_fn"],
+                overall_precision=overall["precision"],
+                overall_recall=overall["recall"],
+                overall_f1=overall["f1"],
+                predictions=predictions,
+                round_predictions=round_predictions,
+            )
 
         # Run evaluation
         start_time = time.time()
 
-        result = asyncio.run(
-            evaluator.run(
-                review_fn=review_fn,
-                variant_id=variant_id,
-                max_concurrency=max_concurrency,
-                on_sample_complete=on_sample_complete,
-            )
-        )
+        result = asyncio.run(run_with_round_capture())
 
         duration = time.time() - start_time
 

@@ -48,7 +48,14 @@ class MultiReviewPipeline(ReviewPipeline):
     - 각 리뷰는 서로 다른 이슈를 탐지할 수 있음 (LLM 무작위성 활용)
     - 집계 단계에서 중복 제거 및 신뢰도 기반 필터링
     - 논문에서 입증된 Multi-Review Aggregation 전략 구현
+
+    Attributes:
+        last_round_results: 마지막 실행의 각 라운드별 리뷰 결과 (평가/디버깅용)
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.last_round_results: List[ReviewResult] = []
 
     async def resolve_diff(self, req):
         raw = (getattr(req, "diff", None) or "").strip()
@@ -117,6 +124,9 @@ class MultiReviewPipeline(ReviewPipeline):
             num_reviews=num_reviews,
             max_concurrency=max_concurrency,
         )
+
+        # 라운드별 결과 저장 (평가/디버깅용)
+        self.last_round_results = review_results
 
         # 4) 결과 집계 (Aggregation)
         aggregation_mode = self.params.get("aggregation_mode", "llm")
