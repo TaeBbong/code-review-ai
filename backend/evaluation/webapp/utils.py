@@ -96,9 +96,8 @@ def get_prompt_pack(variant_id: str) -> dict[str, str]:
         Dict with pack_id, review_system, review_user, etc.
     """
     from backend.domain.prompts.registry import PromptPackRegistry
-    from backend.config.settings import get_settings
+    from backend.config.settings import settings
 
-    settings = get_settings()
     packs_dir = Path(__file__).parent.parent.parent / "domain" / "prompts" / "packs"
 
     registry = PromptPackRegistry(
