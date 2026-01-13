@@ -1,0 +1,1087 @@
+# Security category samples (40 samples)
+# Focus: Injection, authentication, authorization, data exposure, cryptography
+
+samples:
+  # === SQL Injection ===
+  - id: "security-001"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["sql-injection", "query", "string-format"]
+    input:
+      diff: |
+        diff --git a/user_repo.py b/user_repo.py
+        --- a/user_repo.py
+        +++ b/user_repo.py
+        @@ -1,5 +1,5 @@
+         def get_user(db, username):
+        -    query = "SELECT * FROM users WHERE username = ?"
+        -    return db.execute(query, (username,)).fetchone()
+        +    query = f"SELECT * FROM users WHERE username = '{username}'"
+        +    return db.execute(query).fetchone()
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["SQL", "injection", "parameterized", "query"]
+          description_pattern: "SQL injection vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-002"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["sql-injection", "format-string"]
+    input:
+      diff: |
+        diff --git a/search.py b/search.py
+        --- a/search.py
+        +++ b/search.py
+        @@ -1,5 +1,5 @@
+         def search_products(db, search_term):
+        -    return db.execute("SELECT * FROM products WHERE name LIKE ?", (f"%{search_term}%",))
+        +    return db.execute(f"SELECT * FROM products WHERE name LIKE '%{search_term}%'")
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["SQL", "injection", "LIKE", "search"]
+          description_pattern: "SQL injection in search"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-003"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["sql-injection", "order-by"]
+    input:
+      diff: |
+        diff --git a/listing.py b/listing.py
+        --- a/listing.py
+        +++ b/listing.py
+        @@ -1,7 +1,4 @@
+         def list_items(db, sort_column):
+        -    allowed_columns = ['name', 'price', 'date']
+        -    if sort_column not in allowed_columns:
+        -        sort_column = 'name'
+             query = f"SELECT * FROM items ORDER BY {sort_column}"
+             return db.execute(query)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["SQL", "injection", "ORDER BY", "whitelist"]
+          description_pattern: "SQL injection via ORDER BY"
+      min_issues: 1
+      max_issues: 2
+
+  # === Command Injection ===
+  - id: "security-004"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["command-injection", "shell", "os"]
+    input:
+      diff: |
+        diff --git a/file_ops.py b/file_ops.py
+        --- a/file_ops.py
+        +++ b/file_ops.py
+        @@ -1,5 +1,5 @@
+        +import os
+        +
+         def list_directory(path):
+        -    import subprocess
+        -    return subprocess.run(['ls', '-la', path], capture_output=True, text=True)
+        +    return os.system(f'ls -la {path}')
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["command", "injection", "shell", "os.system"]
+          description_pattern: "Command injection vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-005"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["command-injection", "subprocess", "shell"]
+    input:
+      diff: |
+        diff --git a/git_ops.py b/git_ops.py
+        --- a/git_ops.py
+        +++ b/git_ops.py
+        @@ -1,5 +1,5 @@
+         def git_clone(repo_url):
+             import subprocess
+        -    return subprocess.run(['git', 'clone', repo_url], capture_output=True)
+        +    return subprocess.run(f'git clone {repo_url}', shell=True, capture_output=True)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["command", "injection", "shell=True", "subprocess"]
+          description_pattern: "Shell injection with shell=True"
+      min_issues: 1
+      max_issues: 2
+
+  # === Path Traversal ===
+  - id: "security-006"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["path-traversal", "file", "access"]
+    input:
+      diff: |
+        diff --git a/file_server.py b/file_server.py
+        --- a/file_server.py
+        +++ b/file_server.py
+        @@ -1,8 +1,5 @@
+         def serve_file(filename, base_dir="/var/www/files"):
+        -    import os
+        -    safe_path = os.path.normpath(os.path.join(base_dir, filename))
+        -    if not safe_path.startswith(base_dir):
+        -        raise ValueError("Invalid path")
+        +    safe_path = f"{base_dir}/{filename}"
+             with open(safe_path, 'rb') as f:
+                 return f.read()
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["path", "traversal", "directory", "../"]
+          description_pattern: "Path traversal vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-007"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["path-traversal", "upload"]
+    input:
+      diff: |
+        diff --git a/upload.py b/upload.py
+        --- a/upload.py
+        +++ b/upload.py
+        @@ -1,8 +1,5 @@
+         def save_upload(file, upload_dir="/uploads"):
+        -    import os
+        -    filename = os.path.basename(file.filename)
+        -    safe_name = "".join(c for c in filename if c.isalnum() or c in '.-_')
+        +    safe_name = file.filename
+             path = f"{upload_dir}/{safe_name}"
+             file.save(path)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["path", "traversal", "filename", "upload"]
+          description_pattern: "Unsafe filename allows path traversal"
+      min_issues: 1
+      max_issues: 2
+
+  # === XSS (Cross-Site Scripting) ===
+  - id: "security-008"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["xss", "html", "escape"]
+    input:
+      diff: |
+        diff --git a/template.py b/template.py
+        --- a/template.py
+        +++ b/template.py
+        @@ -1,5 +1,4 @@
+         def render_greeting(name):
+        -    from html import escape
+        -    return f"<h1>Hello, {escape(name)}!</h1>"
+        +    return f"<h1>Hello, {name}!</h1>"
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["XSS", "escape", "HTML", "injection"]
+          description_pattern: "XSS vulnerability - unescaped output"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-009"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["xss", "javascript", "event"]
+    input:
+      diff: |
+        diff --git a/widget.py b/widget.py
+        --- a/widget.py
+        +++ b/widget.py
+        @@ -1,6 +1,4 @@
+         def create_button(label, onclick_handler):
+        -    import json
+        -    safe_handler = json.dumps(onclick_handler)
+        -    return f'<button onclick={safe_handler}>{label}</button>'
+        +    return f'<button onclick="{onclick_handler}">{label}</button>'
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["XSS", "onclick", "JavaScript", "injection"]
+          description_pattern: "XSS in event handler"
+      min_issues: 1
+      max_issues: 2
+
+  # === Authentication Issues ===
+  - id: "security-010"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["authentication", "password", "comparison"]
+    input:
+      diff: |
+        diff --git a/auth.py b/auth.py
+        --- a/auth.py
+        +++ b/auth.py
+        @@ -1,5 +1,4 @@
+         def verify_password(stored_hash, password):
+        -    import hmac
+        -    return hmac.compare_digest(stored_hash, hash_password(password))
+        +    return stored_hash == hash_password(password)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["timing", "attack", "compare_digest", "password"]
+          description_pattern: "Timing attack vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-011"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["authentication", "session", "fixation"]
+    input:
+      diff: |
+        diff --git a/login.py b/login.py
+        --- a/login.py
+        +++ b/login.py
+        @@ -3,7 +3,6 @@ def login(username, password):
+             if not user or not verify_password(user.password_hash, password):
+                 return None
+
+        -    session.regenerate_id()
+             session['user_id'] = user.id
+             return user
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["session", "fixation", "regenerate", "id"]
+          description_pattern: "Session fixation vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-012"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["authentication", "hardcoded", "credentials"]
+    input:
+      diff: |
+        diff --git a/config.py b/config.py
+        --- a/config.py
+        +++ b/config.py
+        @@ -1,4 +1,4 @@
+        -API_KEY = os.environ.get('API_KEY')
+        +API_KEY = "sk-1234567890abcdef"
+         DATABASE_URL = os.environ.get('DATABASE_URL')
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["hardcoded", "credential", "secret", "API key"]
+          description_pattern: "Hardcoded credential"
+      min_issues: 1
+      max_issues: 2
+
+  # === Authorization Issues ===
+  - id: "security-013"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["authorization", "idor", "access-control"]
+    input:
+      diff: |
+        diff --git a/api.py b/api.py
+        --- a/api.py
+        +++ b/api.py
+        @@ -1,8 +1,5 @@
+         @app.get("/users/{user_id}/data")
+         def get_user_data(user_id: int, current_user: User = Depends(get_current_user)):
+        -    if current_user.id != user_id and not current_user.is_admin:
+        -        raise HTTPException(403, "Forbidden")
+        -
+             return db.get_user_data(user_id)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["IDOR", "authorization", "access", "control"]
+          description_pattern: "Missing authorization check"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-014"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["authorization", "admin", "bypass"]
+    input:
+      diff: |
+        diff --git a/admin.py b/admin.py
+        --- a/admin.py
+        +++ b/admin.py
+        @@ -1,7 +1,5 @@
+         @app.post("/admin/delete-user/{user_id}")
+        -@require_admin
+         def delete_user(user_id: int):
+        -    audit_log(f"Deleting user {user_id}")
+             return db.delete_user(user_id)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["admin", "authorization", "decorator", "check"]
+          description_pattern: "Missing admin authorization"
+      min_issues: 1
+      max_issues: 2
+
+  # === Cryptography Issues ===
+  - id: "security-015"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["crypto", "hash", "weak"]
+    input:
+      diff: |
+        diff --git a/password.py b/password.py
+        --- a/password.py
+        +++ b/password.py
+        @@ -1,5 +1,5 @@
+        +import hashlib
+        +
+         def hash_password(password):
+        -    import bcrypt
+        -    return bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+        +    return hashlib.md5(password.encode()).hexdigest()
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["MD5", "weak", "hash", "bcrypt"]
+          description_pattern: "Weak hash algorithm for passwords"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-016"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["crypto", "random", "predictable"]
+    input:
+      diff: |
+        diff --git a/token.py b/token.py
+        --- a/token.py
+        +++ b/token.py
+        @@ -1,5 +1,5 @@
+        +import random
+        +
+         def generate_token():
+        -    import secrets
+        -    return secrets.token_urlsafe(32)
+        +    return ''.join(random.choices('abcdef0123456789', k=32))
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["random", "predictable", "secrets", "token"]
+          description_pattern: "Predictable random for security token"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-017"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["crypto", "encryption", "ecb"]
+    input:
+      diff: |
+        diff --git a/encrypt.py b/encrypt.py
+        --- a/encrypt.py
+        +++ b/encrypt.py
+        @@ -1,6 +1,6 @@
+         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+         def encrypt_data(key, data):
+        -    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+        +    cipher = Cipher(algorithms.AES(key), modes.ECB())
+             encryptor = cipher.encryptor()
+             return encryptor.update(data) + encryptor.finalize()
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["ECB", "mode", "encryption", "AES"]
+          description_pattern: "Insecure ECB mode"
+      min_issues: 1
+      max_issues: 2
+
+  # === Data Exposure ===
+  - id: "security-018"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["data-exposure", "logging", "sensitive"]
+    input:
+      diff: |
+        diff --git a/auth.py b/auth.py
+        --- a/auth.py
+        +++ b/auth.py
+        @@ -1,6 +1,6 @@
+         def authenticate(username, password):
+        -    logger.info(f"Authentication attempt for user: {username}")
+        +    logger.info(f"Authentication attempt for user: {username}, password: {password}")
+             user = get_user(username)
+             if verify_password(user, password):
+                 return create_session(user)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["password", "logging", "sensitive", "exposure"]
+          description_pattern: "Password logged in plaintext"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-019"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["data-exposure", "error", "stacktrace"]
+    input:
+      diff: |
+        diff --git a/api.py b/api.py
+        --- a/api.py
+        +++ b/api.py
+        @@ -3,6 +3,6 @@ def api_handler(request):
+             try:
+                 return process_request(request)
+             except Exception as e:
+        -        logger.error(f"Request failed: {e}")
+        -        return {"error": "Internal server error"}
+        +        import traceback
+        +        return {"error": str(e), "trace": traceback.format_exc()}
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["stacktrace", "error", "exposure", "information"]
+          description_pattern: "Stack trace exposed to client"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-020"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["data-exposure", "response", "sensitive"]
+    input:
+      diff: |
+        diff --git a/user_api.py b/user_api.py
+        --- a/user_api.py
+        +++ b/user_api.py
+        @@ -1,8 +1,5 @@
+         def get_user_profile(user_id):
+             user = db.get_user(user_id)
+        -    return {
+        -        "id": user.id,
+        -        "name": user.name,
+        -        "email": user.email
+        -    }
+        +    return user.__dict__
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["data", "exposure", "sensitive", "__dict__"]
+          description_pattern: "Exposes all user fields"
+      min_issues: 1
+      max_issues: 2
+
+  # === Input Validation ===
+  - id: "security-021"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["validation", "regex", "redos"]
+    input:
+      diff: |
+        diff --git a/validator.py b/validator.py
+        --- a/validator.py
+        +++ b/validator.py
+        @@ -1,5 +1,5 @@
+         import re
+
+         def validate_email(email):
+        -    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        +    pattern = r'^([a-zA-Z0-9]+)*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+             return re.match(pattern, email) is not None
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "medium"
+          title_keywords: ["ReDoS", "regex", "catastrophic", "backtracking"]
+          description_pattern: "Potential ReDoS vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-022"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["validation", "size", "dos"]
+    input:
+      diff: |
+        diff --git a/upload.py b/upload.py
+        --- a/upload.py
+        +++ b/upload.py
+        @@ -1,7 +1,4 @@
+         def handle_upload(file):
+        -    MAX_SIZE = 10 * 1024 * 1024  # 10MB
+        -    if file.size > MAX_SIZE:
+        -        raise ValueError("File too large")
+             content = file.read()
+             return process_file(content)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["size", "limit", "DoS", "validation"]
+          description_pattern: "No file size limit"
+      min_issues: 1
+      max_issues: 2
+
+  # === Deserialization ===
+  - id: "security-023"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["deserialization", "pickle", "unsafe"]
+    input:
+      diff: |
+        diff --git a/cache.py b/cache.py
+        --- a/cache.py
+        +++ b/cache.py
+        @@ -1,6 +1,6 @@
+        +import pickle
+        +
+         def load_cached_data(data_bytes):
+        -    import json
+        -    return json.loads(data_bytes)
+        +    return pickle.loads(data_bytes)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["pickle", "deserialization", "unsafe", "RCE"]
+          description_pattern: "Unsafe deserialization"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-024"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["deserialization", "yaml", "unsafe"]
+    input:
+      diff: |
+        diff --git a/config_loader.py b/config_loader.py
+        --- a/config_loader.py
+        +++ b/config_loader.py
+        @@ -2,5 +2,5 @@ import yaml
+
+         def load_config(config_str):
+        -    return yaml.safe_load(config_str)
+        +    return yaml.load(config_str, Loader=yaml.FullLoader)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["YAML", "load", "safe_load", "deserialization"]
+          description_pattern: "Unsafe YAML loading"
+      min_issues: 1
+      max_issues: 2
+
+  # === CORS/CSRF ===
+  - id: "security-025"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["cors", "origin", "wildcard"]
+    input:
+      diff: |
+        diff --git a/app.py b/app.py
+        --- a/app.py
+        +++ b/app.py
+        @@ -2,7 +2,7 @@ from flask import Flask
+         from flask_cors import CORS
+
+         app = Flask(__name__)
+        -CORS(app, origins=["https://myapp.com"])
+        +CORS(app, origins="*")
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["CORS", "wildcard", "origin", "*"]
+          description_pattern: "CORS allows all origins"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-026"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["csrf", "token", "protection"]
+    input:
+      diff: |
+        diff --git a/forms.py b/forms.py
+        --- a/forms.py
+        +++ b/forms.py
+        @@ -1,7 +1,5 @@
+         @app.route('/transfer', methods=['POST'])
+        -@csrf_protect
+         def transfer_money():
+        -    validate_csrf_token(request.form['csrf_token'])
+             amount = request.form['amount']
+             to_account = request.form['to_account']
+             return do_transfer(amount, to_account)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["CSRF", "token", "protection"]
+          description_pattern: "Missing CSRF protection"
+      min_issues: 1
+      max_issues: 2
+
+  # === JWT/Token Issues ===
+  - id: "security-027"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["jwt", "algorithm", "none"]
+    input:
+      diff: |
+        diff --git a/jwt_handler.py b/jwt_handler.py
+        --- a/jwt_handler.py
+        +++ b/jwt_handler.py
+        @@ -2,6 +2,5 @@ import jwt
+
+         def verify_token(token, secret):
+        -    return jwt.decode(token, secret, algorithms=["HS256"])
+        +    return jwt.decode(token, secret, algorithms=["HS256", "none"])
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["JWT", "none", "algorithm", "bypass"]
+          description_pattern: "JWT none algorithm allowed"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-028"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["jwt", "expiry", "validation"]
+    input:
+      diff: |
+        diff --git a/auth.py b/auth.py
+        --- a/auth.py
+        +++ b/auth.py
+        @@ -2,6 +2,5 @@ import jwt
+
+         def verify_jwt(token, secret):
+        -    return jwt.decode(token, secret, algorithms=["HS256"], options={"require": ["exp"]})
+        +    return jwt.decode(token, secret, algorithms=["HS256"], options={"verify_exp": False})
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["JWT", "expiry", "validation", "verify"]
+          description_pattern: "JWT expiry not verified"
+      min_issues: 1
+      max_issues: 2
+
+  # === XML/XXE ===
+  - id: "security-029"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["xxe", "xml", "entity"]
+    input:
+      diff: |
+        diff --git a/xml_parser.py b/xml_parser.py
+        --- a/xml_parser.py
+        +++ b/xml_parser.py
+        @@ -1,6 +1,5 @@
+        -from defusedxml import ElementTree as ET
+        +import xml.etree.ElementTree as ET
+
+         def parse_xml(xml_string):
+        -    # defusedxml prevents XXE attacks
+             return ET.fromstring(xml_string)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["XXE", "XML", "entity", "defusedxml"]
+          description_pattern: "XXE vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  # === SSL/TLS ===
+  - id: "security-030"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["ssl", "verify", "certificate"]
+    input:
+      diff: |
+        diff --git a/client.py b/client.py
+        --- a/client.py
+        +++ b/client.py
+        @@ -2,5 +2,5 @@ import requests
+
+         def fetch_data(url):
+        -    response = requests.get(url)
+        +    response = requests.get(url, verify=False)
+             return response.json()
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["SSL", "certificate", "verify", "MITM"]
+          description_pattern: "SSL verification disabled"
+      min_issues: 1
+      max_issues: 2
+
+  # === Template Injection ===
+  - id: "security-031"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["ssti", "template", "injection"]
+    input:
+      diff: |
+        diff --git a/render.py b/render.py
+        --- a/render.py
+        +++ b/render.py
+        @@ -2,5 +2,5 @@ from jinja2 import Template
+
+         def render_message(template_str, data):
+        -    return Template(template_str, autoescape=True).render(data)
+        +    return Template(template_str).render(data)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["SSTI", "template", "autoescape", "injection"]
+          description_pattern: "Template injection - autoescape disabled"
+      min_issues: 1
+      max_issues: 2
+
+  # === Insecure Configuration ===
+  - id: "security-032"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["config", "debug", "production"]
+    input:
+      diff: |
+        diff --git a/app.py b/app.py
+        --- a/app.py
+        +++ b/app.py
+        @@ -3,5 +3,5 @@ app = Flask(__name__)
+         # ... routes ...
+
+         if __name__ == '__main__':
+        -    app.run(debug=os.environ.get('DEBUG', 'false').lower() == 'true')
+        +    app.run(debug=True)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["debug", "production", "configuration"]
+          description_pattern: "Debug mode hardcoded to True"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "security-033"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["config", "secret", "default"]
+    input:
+      diff: |
+        diff --git a/settings.py b/settings.py
+        --- a/settings.py
+        +++ b/settings.py
+        @@ -1,4 +1,4 @@
+        -SECRET_KEY = os.environ.get('SECRET_KEY')
+        +SECRET_KEY = os.environ.get('SECRET_KEY', 'development-secret-key')
+         if not SECRET_KEY:
+             raise ValueError("SECRET_KEY must be set")
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["secret", "default", "fallback", "key"]
+          description_pattern: "Default secret key in production"
+      min_issues: 1
+      max_issues: 2
+
+  # === Race Conditions ===
+  - id: "security-034"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["race-condition", "toctou", "file"]
+    input:
+      diff: |
+        diff --git a/file_ops.py b/file_ops.py
+        --- a/file_ops.py
+        +++ b/file_ops.py
+        @@ -1,7 +1,6 @@
+         import os
+
+         def safe_delete(filepath, allowed_dir):
+        -    realpath = os.path.realpath(filepath)
+        -    if realpath.startswith(allowed_dir):
+        +    if filepath.startswith(allowed_dir):
+                 os.remove(filepath)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["TOCTOU", "race", "symlink", "realpath"]
+          description_pattern: "TOCTOU race condition"
+      min_issues: 1
+      max_issues: 2
+
+  # === Header Injection ===
+  - id: "security-035"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["header", "injection", "crlf"]
+    input:
+      diff: |
+        diff --git a/redirect.py b/redirect.py
+        --- a/redirect.py
+        +++ b/redirect.py
+        @@ -1,6 +1,4 @@
+         def redirect_to(url):
+        -    if '\r' in url or '\n' in url:
+        -        raise ValueError("Invalid URL")
+             return Response(status=302, headers={'Location': url})
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["CRLF", "header", "injection", "redirect"]
+          description_pattern: "Header injection vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  # === Open Redirect ===
+  - id: "security-036"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["redirect", "open", "url"]
+    input:
+      diff: |
+        diff --git a/login.py b/login.py
+        --- a/login.py
+        +++ b/login.py
+        @@ -1,9 +1,5 @@
+         def login_and_redirect(request):
+             user = authenticate(request)
+             next_url = request.args.get('next', '/')
+        -    # Validate redirect URL
+        -    if not next_url.startswith('/') or next_url.startswith('//'):
+        -        next_url = '/'
+             return redirect(next_url)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "medium"
+          title_keywords: ["open", "redirect", "URL", "validation"]
+          description_pattern: "Open redirect vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  # === Mass Assignment ===
+  - id: "security-037"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["mass-assignment", "orm", "update"]
+    input:
+      diff: |
+        diff --git a/user_api.py b/user_api.py
+        --- a/user_api.py
+        +++ b/user_api.py
+        @@ -1,8 +1,5 @@
+         def update_user(user_id, data):
+             user = User.query.get(user_id)
+        -    allowed_fields = ['name', 'email', 'bio']
+        -    for key, value in data.items():
+        -        if key in allowed_fields:
+        -            setattr(user, key, value)
+        +    for key, value in data.items():
+        +        setattr(user, key, value)
+             db.session.commit()
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["mass", "assignment", "whitelist", "fields"]
+          description_pattern: "Mass assignment vulnerability"
+      min_issues: 1
+      max_issues: 2
+
+  # === Cookie Security ===
+  - id: "security-038"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["cookie", "httponly", "secure"]
+    input:
+      diff: |
+        diff --git a/session.py b/session.py
+        --- a/session.py
+        +++ b/session.py
+        @@ -1,5 +1,5 @@
+         def set_session_cookie(response, session_id):
+        -    response.set_cookie('session', session_id, httponly=True, secure=True, samesite='Strict')
+        +    response.set_cookie('session', session_id)
+             return response
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["cookie", "httponly", "secure", "samesite"]
+          description_pattern: "Cookie security flags removed"
+      min_issues: 1
+      max_issues: 2
+
+  # === Rate Limiting ===
+  - id: "security-039"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["rate-limit", "brute-force", "dos"]
+    input:
+      diff: |
+        diff --git a/login.py b/login.py
+        --- a/login.py
+        +++ b/login.py
+        @@ -1,7 +1,4 @@
+         @app.route('/login', methods=['POST'])
+        -@rate_limit(max_attempts=5, window=60)
+         def login():
+        -    if is_rate_limited(request.remote_addr):
+        -        return {"error": "Too many attempts"}, 429
+             return authenticate(request.form)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "high"
+          title_keywords: ["rate", "limit", "brute", "force"]
+          description_pattern: "Rate limiting removed"
+      min_issues: 1
+      max_issues: 2
+
+  # === Eval/Exec ===
+  - id: "security-040"
+    metadata:
+      primary_category: "security"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["eval", "exec", "code-injection"]
+    input:
+      diff: |
+        diff --git a/calculator.py b/calculator.py
+        --- a/calculator.py
+        +++ b/calculator.py
+        @@ -1,7 +1,4 @@
+         def calculate(expression):
+        -    import ast
+        -    tree = ast.parse(expression, mode='eval')
+        -    # Only allow numbers and basic operators
+        -    return eval(compile(tree, '<string>', 'eval'))
+        +    return eval(expression)
+    expected:
+      issues:
+        - category: "security"
+          severity_min: "blocker"
+          title_keywords: ["eval", "code", "injection", "RCE"]
+          description_pattern: "Arbitrary code execution via eval"
+      min_issues: 1
+      max_issues: 2

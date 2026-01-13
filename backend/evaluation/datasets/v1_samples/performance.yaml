@@ -1,0 +1,1156 @@
+# Performance category samples (40 samples)
+# Focus: N+1 queries, inefficient algorithms, memory leaks, caching, unnecessary computation
+
+samples:
+  # === N+1 Query Problems ===
+  - id: "performance-001"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["n+1", "query", "database"]
+    input:
+      diff: |
+        diff --git a/user_service.py b/user_service.py
+        --- a/user_service.py
+        +++ b/user_service.py
+        @@ -1,6 +1,7 @@
+         def get_users_with_orders():
+        -    users = User.query.options(joinedload(User.orders)).all()
+        +    users = User.query.all()
+             return [
+        -        {"name": u.name, "order_count": len(u.orders)}
+        +        {"name": u.name, "order_count": len(u.orders)}  # Triggers query per user
+                 for u in users
+             ]
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["N+1", "query", "joinedload", "eager"]
+          description_pattern: "N+1 query problem"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-002"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["n+1", "loop", "query"]
+    input:
+      diff: |
+        diff --git a/report.py b/report.py
+        --- a/report.py
+        +++ b/report.py
+        @@ -1,7 +1,7 @@
+         def generate_report(order_ids):
+        -    orders = Order.query.filter(Order.id.in_(order_ids)).all()
+        -    return [format_order(o) for o in orders]
+        +    results = []
+        +    for order_id in order_ids:
+        +        order = Order.query.get(order_id)
+        +        results.append(format_order(order))
+        +    return results
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["N+1", "loop", "query", "batch"]
+          description_pattern: "Query inside loop"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-003"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["n+1", "nested", "prefetch"]
+    input:
+      diff: |
+        diff --git a/category_service.py b/category_service.py
+        --- a/category_service.py
+        +++ b/category_service.py
+        @@ -1,8 +1,7 @@
+         def get_category_tree():
+        -    categories = Category.query.options(
+        -        joinedload(Category.subcategories).joinedload(Subcategory.items)
+        -    ).all()
+        +    categories = Category.query.all()
+             return [
+        -        {"name": c.name, "items": [i.name for s in c.subcategories for i in s.items]}
+        +        {"name": c.name, "items": [i.name for s in c.subcategories for i in s.items]}
+                 for c in categories
+             ]
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["N+1", "nested", "joinedload", "prefetch"]
+          description_pattern: "Nested N+1 queries"
+      min_issues: 1
+      max_issues: 2
+
+  # === Inefficient Algorithms ===
+  - id: "performance-004"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["algorithm", "quadratic", "list"]
+    input:
+      diff: |
+        diff --git a/search.py b/search.py
+        --- a/search.py
+        +++ b/search.py
+        @@ -1,5 +1,7 @@
+         def find_common(list1, list2):
+        -    set2 = set(list2)
+        -    return [x for x in list1 if x in set2]
+        +    result = []
+        +    for x in list1:
+        +        if x in list2:  # O(n) lookup in list
+        +            result.append(x)
+        +    return result
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["O(n^2)", "quadratic", "set", "lookup"]
+          description_pattern: "Quadratic complexity"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-005"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["algorithm", "sorting", "repeated"]
+    input:
+      diff: |
+        diff --git a/ranking.py b/ranking.py
+        --- a/ranking.py
+        +++ b/ranking.py
+        @@ -1,6 +1,6 @@
+         def get_top_n(items, n):
+        -    sorted_items = sorted(items, key=lambda x: x.score, reverse=True)
+        -    return sorted_items[:n]
+        +    import heapq
+        +    return heapq.nlargest(n, items, key=lambda x: x.score)
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["heap", "nlargest", "efficient"]
+          description_pattern: "Efficient algorithm for top-n"
+      min_issues: 0
+      max_issues: 1
+
+  - id: "performance-006"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["algorithm", "string", "concatenation"]
+    input:
+      diff: |
+        diff --git a/builder.py b/builder.py
+        --- a/builder.py
+        +++ b/builder.py
+        @@ -1,6 +1,7 @@
+         def build_large_string(items):
+        -    parts = []
+        -    for item in items:
+        -        parts.append(str(item))
+        -    return ''.join(parts)
+        +    result = ""
+        +    for item in items:
+        +        result += str(item)  # O(n^2) string concatenation
+        +    return result
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["string", "concatenation", "O(n^2)", "join"]
+          description_pattern: "Inefficient string concatenation"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-007"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["algorithm", "list", "insert"]
+    input:
+      diff: |
+        diff --git a/queue.py b/queue.py
+        --- a/queue.py
+        +++ b/queue.py
+        @@ -1,6 +1,7 @@
+        +from collections import deque
+        +
+         class TaskQueue:
+             def __init__(self):
+        -        from collections import deque
+        -        self.tasks = deque()
+        +        self.tasks = []
+
+             def add_front(self, task):
+        -        self.tasks.appendleft(task)
+        +        self.tasks.insert(0, task)  # O(n) operation
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["insert", "O(n)", "deque", "list"]
+          description_pattern: "O(n) insert at front of list"
+      min_issues: 1
+      max_issues: 2
+
+  # === Unnecessary Computation ===
+  - id: "performance-008"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["computation", "loop", "invariant"]
+    input:
+      diff: |
+        diff --git a/processor.py b/processor.py
+        --- a/processor.py
+        +++ b/processor.py
+        @@ -1,7 +1,6 @@
+         def process_items(items, config):
+        -    threshold = calculate_threshold(config)  # Expensive operation
+             results = []
+             for item in items:
+        +        threshold = calculate_threshold(config)  # Calculated every iteration
+                 if item.value > threshold:
+                     results.append(item)
+             return results
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["loop", "invariant", "repeated", "computation"]
+          description_pattern: "Repeated computation in loop"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-009"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["computation", "redundant", "check"]
+    input:
+      diff: |
+        diff --git a/validator.py b/validator.py
+        --- a/validator.py
+        +++ b/validator.py
+        @@ -1,8 +1,7 @@
+         def validate_all(items):
+        -    valid_items = [i for i in items if is_valid(i)]
+        -    return valid_items
+        +    for item in items:
+        +        if not is_valid(item):
+        +            continue
+        +        if is_valid(item):  # Redundant check
+        +            yield item
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["redundant", "check", "duplicate", "validation"]
+          description_pattern: "Redundant validation"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-010"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["computation", "len", "loop"]
+    input:
+      diff: |
+        diff --git a/counter.py b/counter.py
+        --- a/counter.py
+        +++ b/counter.py
+        @@ -1,6 +1,7 @@
+         def count_matches(items, predicate):
+        -    return sum(1 for item in items if predicate(item))
+        +    count = 0
+        +    for i in range(len(items)):  # Unnecessary index
+        +        if predicate(items[i]):
+        +            count += 1
+        +    return count
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["enumerate", "range", "len", "index"]
+          description_pattern: "Unnecessary indexing"
+      min_issues: 1
+      max_issues: 2
+
+  # === Memory Issues ===
+  - id: "performance-011"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["memory", "generator", "list"]
+    input:
+      diff: |
+        diff --git a/file_reader.py b/file_reader.py
+        --- a/file_reader.py
+        +++ b/file_reader.py
+        @@ -1,6 +1,6 @@
+         def process_large_file(filepath):
+        -    with open(filepath) as f:
+        -        for line in f:  # Memory efficient
+        -            yield process_line(line)
+        +    with open(filepath) as f:
+        +        lines = f.readlines()  # Loads entire file
+        +    return [process_line(line) for line in lines]
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["memory", "readlines", "generator", "large"]
+          description_pattern: "Loads entire file into memory"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-012"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["memory", "list", "comprehension"]
+    input:
+      diff: |
+        diff --git a/data_processor.py b/data_processor.py
+        --- a/data_processor.py
+        +++ b/data_processor.py
+        @@ -1,5 +1,5 @@
+         def get_first_match(items, predicate):
+        -    return next((i for i in items if predicate(i)), None)
+        +    matches = [i for i in items if predicate(i)]  # Creates full list
+        +    return matches[0] if matches else None
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["memory", "generator", "early", "exit"]
+          description_pattern: "Creates unnecessary list"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-013"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["memory", "leak", "closure"]
+    input:
+      diff: |
+        diff --git a/event_handler.py b/event_handler.py
+        --- a/event_handler.py
+        +++ b/event_handler.py
+        @@ -1,9 +1,8 @@
+         class DataProcessor:
+             def __init__(self):
+                 self.handlers = []
+        +        self.large_data = load_large_dataset()
+
+             def register_handler(self, handler):
+        -        self.handlers.append(handler)
+        +        # Closure captures self, keeping large_data alive
+        +        self.handlers.append(lambda x: handler(x, self.large_data))
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["memory", "leak", "closure", "reference"]
+          description_pattern: "Closure retains reference to large data"
+      min_issues: 1
+      max_issues: 2
+
+  # === Caching Issues ===
+  - id: "performance-014"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["cache", "missing", "repeated"]
+    input:
+      diff: |
+        diff --git a/fibonacci.py b/fibonacci.py
+        --- a/fibonacci.py
+        +++ b/fibonacci.py
+        @@ -1,8 +1,6 @@
+        -from functools import lru_cache
+        -
+        -@lru_cache(maxsize=None)
+         def fibonacci(n):
+        -    if n < 2:
+        +    if n < 2:  # Exponential time without memoization
+                 return n
+             return fibonacci(n-1) + fibonacci(n-2)
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["cache", "memoization", "fibonacci", "exponential"]
+          description_pattern: "Missing memoization causes exponential complexity"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-015"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["cache", "invalidation", "stale"]
+    input:
+      diff: |
+        diff --git a/user_cache.py b/user_cache.py
+        --- a/user_cache.py
+        +++ b/user_cache.py
+        @@ -5,10 +5,7 @@ def get_user(user_id):
+             if user_id in _cache:
+                 return _cache[user_id]
+             user = db.get_user(user_id)
+        -    _cache[user_id] = user
+        +    _cache[user_id] = user  # Cache never expires
+             return user
+        -
+        -def invalidate_user(user_id):
+        -    _cache.pop(user_id, None)
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["cache", "invalidation", "stale", "ttl"]
+          description_pattern: "Cache never invalidated"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-016"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["cache", "unbounded", "memory"]
+    input:
+      diff: |
+        diff --git a/api_cache.py b/api_cache.py
+        --- a/api_cache.py
+        +++ b/api_cache.py
+        @@ -1,7 +1,7 @@
+        -from functools import lru_cache
+        +_cache = {}
+
+        -@lru_cache(maxsize=1000)
+         def fetch_data(key):
+        -    return expensive_api_call(key)
+        +    if key not in _cache:
+        +        _cache[key] = expensive_api_call(key)  # Unbounded cache
+        +    return _cache[key]
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["cache", "unbounded", "memory", "maxsize"]
+          description_pattern: "Unbounded cache can cause memory issues"
+      min_issues: 1
+      max_issues: 2
+
+  # === Database Performance ===
+  - id: "performance-017"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["database", "select", "columns"]
+    input:
+      diff: |
+        diff --git a/user_api.py b/user_api.py
+        --- a/user_api.py
+        +++ b/user_api.py
+        @@ -1,5 +1,5 @@
+         def get_user_names():
+        -    users = User.query.with_entities(User.id, User.name).all()
+        +    users = User.query.all()  # Fetches all columns
+             return [{"id": u.id, "name": u.name} for u in users]
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["SELECT", "columns", "unnecessary", "fetch"]
+          description_pattern: "Fetches unnecessary columns"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-018"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["database", "count", "query"]
+    input:
+      diff: |
+        diff --git a/stats.py b/stats.py
+        --- a/stats.py
+        +++ b/stats.py
+        @@ -1,4 +1,4 @@
+         def get_user_count():
+        -    return User.query.count()
+        +    return len(User.query.all())  # Loads all users just to count
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["count", "query", "len", "database"]
+          description_pattern: "Loads all records to count"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-019"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["database", "transaction", "batch"]
+    input:
+      diff: |
+        diff --git a/importer.py b/importer.py
+        --- a/importer.py
+        +++ b/importer.py
+        @@ -1,7 +1,6 @@
+         def import_users(user_data_list):
+        -    db.session.bulk_insert_mappings(User, user_data_list)
+        -    db.session.commit()
+        +    for user_data in user_data_list:
+        +        user = User(**user_data)
+        +        db.session.add(user)
+        +        db.session.commit()  # Commit per record
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["bulk", "batch", "commit", "transaction"]
+          description_pattern: "Individual commits instead of batch"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-020"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["database", "index", "query"]
+    input:
+      diff: |
+        diff --git a/search_service.py b/search_service.py
+        --- a/search_service.py
+        +++ b/search_service.py
+        @@ -1,6 +1,6 @@
+         def search_by_email(email):
+        -    # email column is indexed
+        -    return User.query.filter(User.email == email).first()
+        +    # LOWER() prevents index usage
+        +    return User.query.filter(func.lower(User.email) == email.lower()).first()
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["index", "function", "LOWER", "scan"]
+          description_pattern: "Function prevents index usage"
+      min_issues: 1
+      max_issues: 2
+
+  # === API/Network Performance ===
+  - id: "performance-021"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["api", "sequential", "parallel"]
+    input:
+      diff: |
+        diff --git a/aggregator.py b/aggregator.py
+        --- a/aggregator.py
+        +++ b/aggregator.py
+        @@ -1,8 +1,7 @@
+        -import asyncio
+        -
+        -async def fetch_all_data(urls):
+        -    tasks = [fetch_url(url) for url in urls]
+        -    return await asyncio.gather(*tasks)
+        +def fetch_all_data(urls):
+        +    results = []
+        +    for url in urls:
+        +        results.append(fetch_url(url))  # Sequential instead of parallel
+        +    return results
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["sequential", "parallel", "async", "concurrent"]
+          description_pattern: "Sequential instead of parallel requests"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-022"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["api", "pagination", "batch"]
+    input:
+      diff: |
+        diff --git a/data_fetcher.py b/data_fetcher.py
+        --- a/data_fetcher.py
+        +++ b/data_fetcher.py
+        @@ -1,8 +1,7 @@
+         def get_all_items(api_client):
+        -    page = 1
+        -    while True:
+        -        batch = api_client.get_items(page=page, per_page=100)
+        -        if not batch:
+        -            break
+        -        yield from batch
+        -        page += 1
+        +    items = []
+        +    for i in range(1, 10000):
+        +        item = api_client.get_item(i)  # Individual API call per item
+        +        if item:
+        +            items.append(item)
+        +    return items
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["batch", "pagination", "API", "individual"]
+          description_pattern: "Individual API calls instead of batch"
+      min_issues: 1
+      max_issues: 2
+
+  # === Serialization Performance ===
+  - id: "performance-023"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["serialization", "json", "repeated"]
+    input:
+      diff: |
+        diff --git a/logger.py b/logger.py
+        --- a/logger.py
+        +++ b/logger.py
+        @@ -1,7 +1,6 @@
+         def log_events(events):
+        -    import json
+        -    with open('events.jsonl', 'a') as f:
+        -        for event in events:
+        -            f.write(json.dumps(event) + '\n')
+        +    for event in events:
+        +        with open('events.jsonl', 'a') as f:  # Opens file each iteration
+        +            f.write(json.dumps(event) + '\n')
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["file", "open", "loop", "IO"]
+          description_pattern: "File opened inside loop"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-024"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["serialization", "regex", "compile"]
+    input:
+      diff: |
+        diff --git a/parser.py b/parser.py
+        --- a/parser.py
+        +++ b/parser.py
+        @@ -1,7 +1,6 @@
+         import re
+
+        -EMAIL_PATTERN = re.compile(r'^[\w.-]+@[\w.-]+\.\w+$')
+        -
+         def validate_emails(emails):
+        -    return [e for e in emails if EMAIL_PATTERN.match(e)]
+        +    pattern = r'^[\w.-]+@[\w.-]+\.\w+$'
+        +    return [e for e in emails if re.match(pattern, e)]  # Recompiles each time
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["regex", "compile", "pattern", "recompile"]
+          description_pattern: "Regex recompiled on each call"
+      min_issues: 1
+      max_issues: 2
+
+  # === Collection Operations ===
+  - id: "performance-025"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["collection", "copy", "slice"]
+    input:
+      diff: |
+        diff --git a/reverser.py b/reverser.py
+        --- a/reverser.py
+        +++ b/reverser.py
+        @@ -1,4 +1,6 @@
+         def reverse_list(items):
+        -    return items[::-1]
+        +    result = items.copy()
+        +    result.reverse()
+        +    return result
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["copy", "reverse", "slice", "in-place"]
+          description_pattern: "Unnecessary copy for reversal"
+      min_issues: 0
+      max_issues: 1
+
+  - id: "performance-026"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["collection", "dict", "keys"]
+    input:
+      diff: |
+        diff --git a/lookup.py b/lookup.py
+        --- a/lookup.py
+        +++ b/lookup.py
+        @@ -1,4 +1,5 @@
+         def key_exists(d, key):
+        -    return key in d
+        +    keys = list(d.keys())  # Creates unnecessary list
+        +    return key in keys
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["dict", "keys", "list", "O(n)"]
+          description_pattern: "O(1) lookup changed to O(n)"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-027"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["collection", "sort", "key"]
+    input:
+      diff: |
+        diff --git a/sorter.py b/sorter.py
+        --- a/sorter.py
+        +++ b/sorter.py
+        @@ -1,4 +1,5 @@
+         def sort_by_score(items):
+        -    return sorted(items, key=lambda x: x.score)
+        +    decorated = [(item.score, item) for item in items]
+        +    decorated.sort()
+        +    return [item for score, item in decorated]
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["sort", "key", "Schwartzian", "transform"]
+          description_pattern: "Manual Schwartzian transform unnecessary"
+      min_issues: 0
+      max_issues: 1
+
+  # === Lazy Evaluation Issues ===
+  - id: "performance-028"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["lazy", "eager", "evaluation"]
+    input:
+      diff: |
+        diff --git a/data_pipeline.py b/data_pipeline.py
+        --- a/data_pipeline.py
+        +++ b/data_pipeline.py
+        @@ -1,6 +1,6 @@
+         def process_data(items):
+        -    filtered = (x for x in items if x.valid)
+        -    transformed = (transform(x) for x in filtered)
+        +    filtered = [x for x in items if x.valid]  # Eagerly evaluates
+        +    transformed = [transform(x) for x in filtered]  # Creates intermediate list
+             return next(transformed, None)
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["generator", "lazy", "eager", "intermediate"]
+          description_pattern: "Eager evaluation for first-match operation"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-029"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["lazy", "any", "all"]
+    input:
+      diff: |
+        diff --git a/checker.py b/checker.py
+        --- a/checker.py
+        +++ b/checker.py
+        @@ -1,4 +1,6 @@
+         def has_valid_item(items):
+        -    return any(is_valid(item) for item in items)
+        +    valid_items = [is_valid(item) for item in items]  # Checks all items
+        +    return True in valid_items
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["any", "short-circuit", "early", "exit"]
+          description_pattern: "Checks all items instead of short-circuiting"
+      min_issues: 1
+      max_issues: 2
+
+  # === Object Creation ===
+  - id: "performance-030"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["object", "creation", "reuse"]
+    input:
+      diff: |
+        diff --git a/formatter.py b/formatter.py
+        --- a/formatter.py
+        +++ b/formatter.py
+        @@ -1,7 +1,6 @@
+        -_formatter = DateFormatter()
+        -
+         def format_dates(dates):
+        -    return [_formatter.format(d) for d in dates]
+        +    results = []
+        +    for d in dates:
+        +        formatter = DateFormatter()  # Created per iteration
+        +        results.append(formatter.format(d))
+        +    return results
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["object", "creation", "loop", "reuse"]
+          description_pattern: "Object created inside loop"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-031"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["object", "datetime", "now"]
+    input:
+      diff: |
+        diff --git a/logger.py b/logger.py
+        --- a/logger.py
+        +++ b/logger.py
+        @@ -1,7 +1,6 @@
+         from datetime import datetime
+
+         def log_batch(messages):
+        -    timestamp = datetime.now()
+             for msg in messages:
+        -        write_log(timestamp, msg)
+        +        write_log(datetime.now(), msg)  # Called per message
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["datetime", "now", "loop", "timestamp"]
+          description_pattern: "datetime.now() called repeatedly"
+      min_issues: 1
+      max_issues: 2
+
+  # === Import/Module Loading ===
+  - id: "performance-032"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["import", "loop", "module"]
+    input:
+      diff: |
+        diff --git a/encoder.py b/encoder.py
+        --- a/encoder.py
+        +++ b/encoder.py
+        @@ -1,6 +1,5 @@
+        -import json
+        -
+         def encode_items(items):
+             results = []
+             for item in items:
+        +        import json  # Import inside loop
+                 results.append(json.dumps(item))
+             return results
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["import", "loop", "module", "top-level"]
+          description_pattern: "Import inside loop"
+      min_issues: 1
+      max_issues: 2
+
+  # === Recursion Issues ===
+  - id: "performance-033"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["recursion", "stack", "iteration"]
+    input:
+      diff: |
+        diff --git a/tree.py b/tree.py
+        --- a/tree.py
+        +++ b/tree.py
+        @@ -1,9 +1,6 @@
+         def sum_tree(node):
+        -    stack = [node]
+        -    total = 0
+        -    while stack:
+        -        n = stack.pop()
+        -        total += n.value
+        -        stack.extend(n.children)
+        -    return total
+        +    if not node:
+        +        return 0
+        +    return node.value + sum(sum_tree(c) for c in node.children)
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["recursion", "stack", "overflow", "deep"]
+          description_pattern: "Recursion may overflow on deep trees"
+      min_issues: 1
+      max_issues: 2
+
+  # === Async/Await Issues ===
+  - id: "performance-034"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["async", "blocking", "event-loop"]
+    input:
+      diff: |
+        diff --git a/api_service.py b/api_service.py
+        --- a/api_service.py
+        +++ b/api_service.py
+        @@ -1,6 +1,7 @@
+        +import time
+        +
+         async def rate_limited_call(api):
+        -    await asyncio.sleep(1)  # Non-blocking sleep
+        +    time.sleep(1)  # Blocks the event loop
+             return await api.call()
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["blocking", "async", "sleep", "event-loop"]
+          description_pattern: "Blocking call in async function"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-035"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["async", "gather", "sequential"]
+    input:
+      diff: |
+        diff --git a/data_loader.py b/data_loader.py
+        --- a/data_loader.py
+        +++ b/data_loader.py
+        @@ -1,6 +1,8 @@
+         async def load_user_data(user_id):
+        -    profile, orders, settings = await asyncio.gather(
+        -        fetch_profile(user_id),
+        -        fetch_orders(user_id),
+        -        fetch_settings(user_id)
+        -    )
+        +    profile = await fetch_profile(user_id)
+        +    orders = await fetch_orders(user_id)
+        +    settings = await fetch_settings(user_id)
+             return {"profile": profile, "orders": orders, "settings": settings}
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["gather", "sequential", "parallel", "await"]
+          description_pattern: "Sequential awaits instead of gather"
+      min_issues: 1
+      max_issues: 2
+
+  # === Data Structure Choice ===
+  - id: "performance-036"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["data-structure", "set", "list"]
+    input:
+      diff: |
+        diff --git a/membership.py b/membership.py
+        --- a/membership.py
+        +++ b/membership.py
+        @@ -1,5 +1,5 @@
+         def filter_allowed(items, allowed_ids):
+        -    allowed_set = set(allowed_ids)
+        +    allowed_list = list(allowed_ids)  # O(n) lookup instead of O(1)
+             return [i for i in items if i.id in allowed_list]
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["set", "list", "lookup", "O(n)"]
+          description_pattern: "List lookup instead of set"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-037"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["data-structure", "counter", "dict"]
+    input:
+      diff: |
+        diff --git a/word_counter.py b/word_counter.py
+        --- a/word_counter.py
+        +++ b/word_counter.py
+        @@ -1,6 +1,9 @@
+        -from collections import Counter
+        -
+         def count_words(text):
+        -    return Counter(text.split())
+        +    counts = {}
+        +    for word in text.split():
+        +        if word not in counts:
+        +            counts[word] = 0
+        +        counts[word] += 1
+        +    return counts
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "low"
+          title_keywords: ["Counter", "dict", "collections", "counting"]
+          description_pattern: "Manual counting instead of Counter"
+      min_issues: 0
+      max_issues: 1
+
+  # === Resource Management ===
+  - id: "performance-038"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["resource", "connection", "pool"]
+    input:
+      diff: |
+        diff --git a/db_service.py b/db_service.py
+        --- a/db_service.py
+        +++ b/db_service.py
+        @@ -1,8 +1,6 @@
+        -_pool = create_connection_pool(max_connections=10)
+        -
+         def get_user(user_id):
+        -    with _pool.get_connection() as conn:
+        -        return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        +    conn = create_db_connection()  # Creates new connection each call
+        +    result = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        +    conn.close()
+        +    return result
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["connection", "pool", "create", "reuse"]
+          description_pattern: "Creates connection per request"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "performance-039"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["resource", "http", "session"]
+    input:
+      diff: |
+        diff --git a/api_client.py b/api_client.py
+        --- a/api_client.py
+        +++ b/api_client.py
+        @@ -1,8 +1,6 @@
+        -_session = requests.Session()
+        -
+         def fetch_data(url):
+        -    return _session.get(url).json()
+        +    return requests.get(url).json()  # New connection per request
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "medium"
+          title_keywords: ["session", "requests", "connection", "reuse"]
+          description_pattern: "No connection reuse"
+      min_issues: 1
+      max_issues: 2
+
+  # === Premature Optimization Removal ===
+  - id: "performance-040"
+    metadata:
+      primary_category: "performance"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["optimization", "cache", "hot-path"]
+    input:
+      diff: |
+        diff --git a/renderer.py b/renderer.py
+        --- a/renderer.py
+        +++ b/renderer.py
+        @@ -1,12 +1,7 @@
+        -# Pre-computed lookup table for hot path
+        -_LOOKUP = {i: expensive_compute(i) for i in range(1000)}
+        -
+         def render_frame(pixels):
+        -    return [_LOOKUP.get(p, expensive_compute(p)) for p in pixels]
+        +    return [expensive_compute(p) for p in pixels]  # Called 60fps
+    expected:
+      issues:
+        - category: "performance"
+          severity_min: "high"
+          title_keywords: ["lookup", "cache", "compute", "hot-path"]
+          description_pattern: "Removed optimization on hot path"
+      min_issues: 1
+      max_issues: 2

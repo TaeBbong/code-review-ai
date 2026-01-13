@@ -1,0 +1,1058 @@
+# Correctness category samples (40 samples)
+# Focus: Logic errors, off-by-one, null handling, type errors, boundary conditions
+
+samples:
+  # === Off-by-one errors ===
+  - id: "correctness-001"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["off-by-one", "loop", "boundary"]
+    input:
+      diff: |
+        diff --git a/utils.py b/utils.py
+        --- a/utils.py
+        +++ b/utils.py
+        @@ -1,5 +1,5 @@
+         def sum_range(start, end):
+        -    total = 0
+        -    for i in range(start, end + 1):
+        -        total += i
+        -    return total
+        +    total = 0
+        +    for i in range(start, end):
+        +        total += i
+        +    return total
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["off-by-one", "range", "boundary", "end"]
+          description_pattern: "Loop excludes end value"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-002"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["off-by-one", "array", "index"]
+    input:
+      diff: |
+        diff --git a/array_utils.py b/array_utils.py
+        --- a/array_utils.py
+        +++ b/array_utils.py
+        @@ -1,6 +1,6 @@
+         def get_last_n_elements(arr, n):
+        -    if n > len(arr):
+        +    if n >= len(arr):
+                 return arr[:]
+        -    return arr[-n:]
+        +    return arr[len(arr)-n:]
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "low"
+          title_keywords: ["off-by-one", "boundary", "condition"]
+          description_pattern: "Condition change affects boundary"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-003"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["off-by-one", "pagination"]
+    input:
+      diff: |
+        diff --git a/pagination.py b/pagination.py
+        --- a/pagination.py
+        +++ b/pagination.py
+        @@ -1,7 +1,7 @@
+         def get_page(items, page_num, page_size):
+             """Get items for a specific page (1-indexed)."""
+        -    start = (page_num - 1) * page_size
+        -    end = start + page_size
+        +    start = page_num * page_size
+        +    end = start + page_size
+             return items[start:end]
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["off-by-one", "pagination", "index", "page"]
+          description_pattern: "Page calculation incorrect for 1-indexed"
+      min_issues: 1
+      max_issues: 2
+
+  # === Null/None handling ===
+  - id: "correctness-004"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["null", "none", "check"]
+    input:
+      diff: |
+        diff --git a/user_service.py b/user_service.py
+        --- a/user_service.py
+        +++ b/user_service.py
+        @@ -1,6 +1,5 @@
+         def get_user_name(user):
+        -    if user is not None:
+        -        return user.name
+        +    return user.name
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["null", "none", "check", "missing"]
+          description_pattern: "Missing null check"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-005"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["null", "chain", "optional"]
+    input:
+      diff: |
+        diff --git a/order_service.py b/order_service.py
+        --- a/order_service.py
+        +++ b/order_service.py
+        @@ -1,8 +1,4 @@
+         def get_shipping_address(order):
+        -    if order and order.customer:
+        -        if order.customer.address:
+        -            return order.customer.address.street
+        -    return None
+        +    return order.customer.address.street
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["null", "none", "chain", "attribute"]
+          description_pattern: "Missing null checks in chain"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-006"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["null", "default", "get"]
+    input:
+      diff: |
+        diff --git a/config.py b/config.py
+        --- a/config.py
+        +++ b/config.py
+        @@ -1,4 +1,4 @@
+         def get_config_value(config, key):
+        -    return config.get(key, "default")
+        +    return config[key]
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["KeyError", "missing", "default", "get"]
+          description_pattern: "Direct access may raise KeyError"
+      min_issues: 1
+      max_issues: 2
+
+  # === Type errors ===
+  - id: "correctness-007"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["type", "string", "integer"]
+    input:
+      diff: |
+        diff --git a/calculator.py b/calculator.py
+        --- a/calculator.py
+        +++ b/calculator.py
+        @@ -1,4 +1,4 @@
+         def add_numbers(a, b):
+        -    return int(a) + int(b)
+        +    return a + b
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "low"
+          title_keywords: ["type", "string", "concatenation", "conversion"]
+          description_pattern: "String inputs will concatenate instead of add"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-008"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["type", "list", "extend"]
+    input:
+      diff: |
+        diff --git a/list_utils.py b/list_utils.py
+        --- a/list_utils.py
+        +++ b/list_utils.py
+        @@ -1,5 +1,5 @@
+         def merge_lists(list1, list2):
+             result = list1.copy()
+        -    result.extend(list2)
+        +    result.append(list2)
+             return result
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["append", "extend", "nested", "list"]
+          description_pattern: "append creates nested list instead of merging"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-009"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["type", "boolean", "comparison"]
+    input:
+      diff: |
+        diff --git a/validator.py b/validator.py
+        --- a/validator.py
+        +++ b/validator.py
+        @@ -1,4 +1,4 @@
+         def is_valid_age(age):
+        -    return 0 <= age <= 150
+        +    return age
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["boolean", "truthy", "return", "type"]
+          description_pattern: "Returns age value instead of boolean"
+      min_issues: 1
+      max_issues: 2
+
+  # === Logic errors ===
+  - id: "correctness-010"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["logic", "operator", "comparison"]
+    input:
+      diff: |
+        diff --git a/discount.py b/discount.py
+        --- a/discount.py
+        +++ b/discount.py
+        @@ -1,6 +1,6 @@
+         def apply_discount(price, discount_percent):
+        -    if discount_percent > 0 and discount_percent <= 100:
+        +    if discount_percent > 0 or discount_percent <= 100:
+                 return price * (1 - discount_percent / 100)
+             return price
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["and", "or", "logic", "operator"]
+          description_pattern: "Changed AND to OR breaks validation"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-011"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["logic", "negation", "condition"]
+    input:
+      diff: |
+        diff --git a/auth.py b/auth.py
+        --- a/auth.py
+        +++ b/auth.py
+        @@ -1,5 +1,5 @@
+         def can_access(user, resource):
+        -    if user.is_admin or resource.is_public:
+        +    if not user.is_admin or resource.is_public:
+                 return True
+             return user.id == resource.owner_id
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["not", "negation", "logic", "admin"]
+          description_pattern: "Negation inverts admin check logic"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-012"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["logic", "return", "early"]
+    input:
+      diff: |
+        diff --git a/search.py b/search.py
+        --- a/search.py
+        +++ b/search.py
+        @@ -1,8 +1,7 @@
+         def find_first_match(items, predicate):
+             for item in items:
+                 if predicate(item):
+        -            return item
+        -    return None
+        +            pass
+        +    return item
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["return", "loop", "last", "first"]
+          description_pattern: "Returns last item instead of first match"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-013"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["logic", "increment", "decrement"]
+    input:
+      diff: |
+        diff --git a/counter.py b/counter.py
+        --- a/counter.py
+        +++ b/counter.py
+        @@ -1,6 +1,6 @@
+         class Counter:
+             def __init__(self):
+                 self.count = 0
+
+             def decrement(self):
+        -        self.count -= 1
+        +        self.count += 1
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["increment", "decrement", "opposite", "wrong"]
+          description_pattern: "Decrement method increments instead"
+      min_issues: 1
+      max_issues: 2
+
+  # === Boundary conditions ===
+  - id: "correctness-014"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["boundary", "empty", "list"]
+    input:
+      diff: |
+        diff --git a/stats.py b/stats.py
+        --- a/stats.py
+        +++ b/stats.py
+        @@ -1,6 +1,4 @@
+         def calculate_average(numbers):
+        -    if not numbers:
+        -        return 0
+             return sum(numbers) / len(numbers)
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["empty", "division", "zero", "check"]
+          description_pattern: "Division by zero on empty list"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-015"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["boundary", "negative", "index"]
+    input:
+      diff: |
+        diff --git a/array_ops.py b/array_ops.py
+        --- a/array_ops.py
+        +++ b/array_ops.py
+        @@ -1,6 +1,4 @@
+         def get_element_at(arr, index):
+        -    if index < 0 or index >= len(arr):
+        -        return None
+             return arr[index]
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["index", "bounds", "check", "range"]
+          description_pattern: "Missing bounds check"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-016"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["boundary", "max", "overflow"]
+    input:
+      diff: |
+        diff --git a/counter.py b/counter.py
+        --- a/counter.py
+        +++ b/counter.py
+        @@ -1,7 +1,5 @@
+         def increment_with_limit(value, max_value):
+        -    if value < max_value:
+        -        return value + 1
+        -    return max_value
+        +    return value + 1
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["limit", "max", "overflow", "boundary"]
+          description_pattern: "Removed upper limit check"
+      min_issues: 1
+      max_issues: 2
+
+  # === Wrong variable/value ===
+  - id: "correctness-017"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["variable", "wrong", "assignment"]
+    input:
+      diff: |
+        diff --git a/swap.py b/swap.py
+        --- a/swap.py
+        +++ b/swap.py
+        @@ -1,5 +1,5 @@
+         def swap_values(a, b):
+             temp = a
+        -    a = b
+        +    a = a
+             b = temp
+             return a, b
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["swap", "wrong", "variable", "assignment"]
+          description_pattern: "Self-assignment breaks swap"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-018"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["variable", "return", "wrong"]
+    input:
+      diff: |
+        diff --git a/math_utils.py b/math_utils.py
+        --- a/math_utils.py
+        +++ b/math_utils.py
+        @@ -1,4 +1,4 @@
+         def multiply(x, y):
+             result = x * y
+        -    return result
+        +    return x
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["return", "wrong", "variable", "result"]
+          description_pattern: "Returns input instead of result"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-019"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["variable", "scope", "shadow"]
+    input:
+      diff: |
+        diff --git a/accumulator.py b/accumulator.py
+        --- a/accumulator.py
+        +++ b/accumulator.py
+        @@ -1,7 +1,7 @@
+         total = 0
+
+         def add_to_total(value):
+        -    global total
+        +    total = 0
+             total += value
+             return total
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["global", "local", "shadow", "scope"]
+          description_pattern: "Local variable shadows global"
+      min_issues: 1
+      max_issues: 2
+
+  # === Comparison errors ===
+  - id: "correctness-020"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["comparison", "equality", "identity"]
+    input:
+      diff: |
+        diff --git a/compare.py b/compare.py
+        --- a/compare.py
+        +++ b/compare.py
+        @@ -1,4 +1,4 @@
+         def are_equal(obj1, obj2):
+        -    return obj1 == obj2
+        +    return obj1 is obj2
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["is", "==", "identity", "equality"]
+          description_pattern: "Identity check instead of equality"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-021"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["comparison", "operator", "reversed"]
+    input:
+      diff: |
+        diff --git a/sorting.py b/sorting.py
+        --- a/sorting.py
+        +++ b/sorting.py
+        @@ -1,4 +1,4 @@
+         def is_ascending(a, b, c):
+        -    return a <= b <= c
+        +    return a >= b >= c
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["ascending", "descending", "comparison", "reversed"]
+          description_pattern: "Comparison reversed"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-022"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["comparison", "float", "precision"]
+    input:
+      diff: |
+        diff --git a/float_compare.py b/float_compare.py
+        --- a/float_compare.py
+        +++ b/float_compare.py
+        @@ -1,4 +1,4 @@
+         def floats_equal(a, b, epsilon=1e-9):
+        -    return abs(a - b) < epsilon
+        +    return a == b
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["float", "precision", "comparison", "epsilon"]
+          description_pattern: "Direct float comparison loses precision tolerance"
+      min_issues: 1
+      max_issues: 2
+
+  # === State management errors ===
+  - id: "correctness-023"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["state", "mutable", "default"]
+    input:
+      diff: |
+        diff --git a/user.py b/user.py
+        --- a/user.py
+        +++ b/user.py
+        @@ -1,5 +1,4 @@
+        -def add_item(item, items=None):
+        -    if items is None:
+        -        items = []
+        +def add_item(item, items=[]):
+             items.append(item)
+             return items
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["mutable", "default", "argument", "list"]
+          description_pattern: "Mutable default argument"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-024"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["state", "copy", "reference"]
+    input:
+      diff: |
+        diff --git a/data_manager.py b/data_manager.py
+        --- a/data_manager.py
+        +++ b/data_manager.py
+        @@ -1,5 +1,5 @@
+         def update_config(original, updates):
+        -    config = original.copy()
+        +    config = original
+             config.update(updates)
+             return config
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["copy", "reference", "mutation", "original"]
+          description_pattern: "Modifies original instead of copy"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-025"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["state", "shallow", "deep"]
+    input:
+      diff: |
+        diff --git a/nested_data.py b/nested_data.py
+        --- a/nested_data.py
+        +++ b/nested_data.py
+        @@ -1,6 +1,6 @@
+        +import copy
+        +
+         def clone_nested(data):
+        -    import copy
+        -    return copy.deepcopy(data)
+        +    return data.copy()
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["shallow", "deep", "copy", "nested"]
+          description_pattern: "Shallow copy for nested data"
+      min_issues: 1
+      max_issues: 2
+
+  # === Arithmetic errors ===
+  - id: "correctness-026"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["arithmetic", "order", "precedence"]
+    input:
+      diff: |
+        diff --git a/temperature.py b/temperature.py
+        --- a/temperature.py
+        +++ b/temperature.py
+        @@ -1,4 +1,4 @@
+         def celsius_to_fahrenheit(celsius):
+        -    return (celsius * 9/5) + 32
+        +    return celsius * 9/5 + 32
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "low"
+          title_keywords: ["precedence", "parentheses", "calculation"]
+          description_pattern: "Operator precedence may cause issues"
+      min_issues: 0
+      max_issues: 1
+
+  - id: "correctness-027"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["arithmetic", "division", "integer"]
+    input:
+      diff: |
+        diff --git a/percentage.py b/percentage.py
+        --- a/percentage.py
+        +++ b/percentage.py
+        @@ -1,4 +1,4 @@
+         def calculate_percentage(part, whole):
+        -    return (part / whole) * 100
+        +    return (part // whole) * 100
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["integer", "division", "floor", "//"]
+          description_pattern: "Integer division loses precision"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-028"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["arithmetic", "modulo", "sign"]
+    input:
+      diff: |
+        diff --git a/wrap.py b/wrap.py
+        --- a/wrap.py
+        +++ b/wrap.py
+        @@ -1,5 +1,4 @@
+         def wrap_index(index, length):
+        -    """Wrap index to valid range, handling negatives."""
+        -    return ((index % length) + length) % length
+        +    return index % length
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["negative", "modulo", "wrap", "index"]
+          description_pattern: "Negative index handling removed"
+      min_issues: 1
+      max_issues: 2
+
+  # === String handling errors ===
+  - id: "correctness-029"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["string", "strip", "whitespace"]
+    input:
+      diff: |
+        diff --git a/parser.py b/parser.py
+        --- a/parser.py
+        +++ b/parser.py
+        @@ -1,4 +1,4 @@
+         def parse_input(text):
+        -    return text.strip().lower()
+        +    return text.lower()
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "low"
+          title_keywords: ["strip", "whitespace", "trim"]
+          description_pattern: "Whitespace no longer stripped"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-030"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["string", "split", "empty"]
+    input:
+      diff: |
+        diff --git a/csv_parser.py b/csv_parser.py
+        --- a/csv_parser.py
+        +++ b/csv_parser.py
+        @@ -1,6 +1,4 @@
+         def parse_csv_line(line):
+        -    if not line.strip():
+        -        return []
+             return line.split(',')
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["empty", "check", "split", "line"]
+          description_pattern: "Empty line handling removed"
+      min_issues: 1
+      max_issues: 2
+
+  # === Collection operation errors ===
+  - id: "correctness-031"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["collection", "iteration", "modification"]
+    input:
+      diff: |
+        diff --git a/filter.py b/filter.py
+        --- a/filter.py
+        +++ b/filter.py
+        @@ -1,6 +1,5 @@
+         def remove_negatives(numbers):
+        -    return [n for n in numbers if n >= 0]
+        +    for n in numbers:
+        +        if n < 0:
+        +            numbers.remove(n)
+        +    return numbers
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["iteration", "modification", "remove", "loop"]
+          description_pattern: "Modifying list while iterating"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-032"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["collection", "dict", "keys"]
+    input:
+      diff: |
+        diff --git a/dict_ops.py b/dict_ops.py
+        --- a/dict_ops.py
+        +++ b/dict_ops.py
+        @@ -1,6 +1,5 @@
+         def remove_empty_values(d):
+        -    keys_to_remove = [k for k, v in d.items() if not v]
+        -    for k in keys_to_remove:
+        +    for k, v in d.items():
+        +        if not v:
+                     del d[k]
+             return d
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["dictionary", "iteration", "modification", "delete"]
+          description_pattern: "Modifying dict while iterating"
+      min_issues: 1
+      max_issues: 2
+
+  # === Exception handling errors ===
+  - id: "correctness-033"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["exception", "catch", "broad"]
+    input:
+      diff: |
+        diff --git a/file_reader.py b/file_reader.py
+        --- a/file_reader.py
+        +++ b/file_reader.py
+        @@ -1,8 +1,7 @@
+         def read_file(path):
+             try:
+                 with open(path) as f:
+                     return f.read()
+        -    except FileNotFoundError:
+        +    except:
+                 return None
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["exception", "bare", "except", "catch"]
+          description_pattern: "Bare except catches all exceptions"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-034"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["exception", "raise", "swallow"]
+    input:
+      diff: |
+        diff --git a/validator.py b/validator.py
+        --- a/validator.py
+        +++ b/validator.py
+        @@ -1,7 +1,7 @@
+         def validate_data(data):
+             try:
+                 process(data)
+        -    except ValidationError as e:
+        -        raise InvalidDataError(f"Validation failed: {e}")
+        +    except ValidationError:
+        +        pass
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["exception", "swallow", "silent", "ignore"]
+          description_pattern: "Exception silently swallowed"
+      min_issues: 1
+      max_issues: 2
+
+  # === Async/concurrency errors ===
+  - id: "correctness-035"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["async", "await", "missing"]
+    input:
+      diff: |
+        diff --git a/api_client.py b/api_client.py
+        --- a/api_client.py
+        +++ b/api_client.py
+        @@ -1,5 +1,5 @@
+         async def fetch_data(url):
+             response = await http_client.get(url)
+        -    data = await response.json()
+        +    data = response.json()
+             return data
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["await", "async", "coroutine", "missing"]
+          description_pattern: "Missing await on coroutine"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-036"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["async", "return", "coroutine"]
+    input:
+      diff: |
+        diff --git a/service.py b/service.py
+        --- a/service.py
+        +++ b/service.py
+        @@ -1,5 +1,5 @@
+        -async def get_user(user_id):
+        +def get_user(user_id):
+             return fetch_user_from_db(user_id)
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["async", "sync", "coroutine", "function"]
+          description_pattern: "Async function changed to sync"
+      min_issues: 1
+      max_issues: 2
+
+  # === Algorithm errors ===
+  - id: "correctness-037"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["algorithm", "sort", "reverse"]
+    input:
+      diff: |
+        diff --git a/sorter.py b/sorter.py
+        --- a/sorter.py
+        +++ b/sorter.py
+        @@ -1,4 +1,4 @@
+         def get_top_n(items, n, key=None):
+        -    return sorted(items, key=key, reverse=True)[:n]
+        +    return sorted(items, key=key)[:n]
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["sort", "reverse", "top", "order"]
+          description_pattern: "Returns bottom n instead of top n"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-038"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["algorithm", "binary-search", "mid"]
+    input:
+      diff: |
+        diff --git a/search.py b/search.py
+        --- a/search.py
+        +++ b/search.py
+        @@ -3,7 +3,7 @@ def binary_search(arr, target):
+             high = len(arr) - 1
+
+             while low <= high:
+        -        mid = (low + high) // 2
+        +        mid = (low + high) / 2
+                 if arr[mid] == target:
+                     return mid
+                 elif arr[mid] < target:
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "high"
+          title_keywords: ["integer", "division", "index", "float"]
+          description_pattern: "Float division for array index"
+      min_issues: 1
+      max_issues: 2
+
+  # === Date/time errors ===
+  - id: "correctness-039"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["datetime", "timezone", "naive"]
+    input:
+      diff: |
+        diff --git a/timestamp.py b/timestamp.py
+        --- a/timestamp.py
+        +++ b/timestamp.py
+        @@ -1,5 +1,4 @@
+        -from datetime import datetime, timezone
+        +from datetime import datetime
+
+         def get_current_timestamp():
+        -    return datetime.now(timezone.utc)
+        +    return datetime.now()
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["timezone", "utc", "naive", "datetime"]
+          description_pattern: "Timezone-naive datetime"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "correctness-040"
+    metadata:
+      primary_category: "correctness"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["datetime", "comparison", "format"]
+    input:
+      diff: |
+        diff --git a/date_utils.py b/date_utils.py
+        --- a/date_utils.py
+        +++ b/date_utils.py
+        @@ -1,5 +1,4 @@
+         def is_date_before(date_str1, date_str2):
+        -    # Assuming ISO format: YYYY-MM-DD
+        -    from datetime import datetime
+        -    return datetime.fromisoformat(date_str1) < datetime.fromisoformat(date_str2)
+        +    return date_str1 < date_str2
+    expected:
+      issues:
+        - category: "correctness"
+          severity_min: "medium"
+          title_keywords: ["date", "string", "comparison", "format"]
+          description_pattern: "String comparison may fail for non-ISO formats"
+      min_issues: 1
+      max_issues: 2

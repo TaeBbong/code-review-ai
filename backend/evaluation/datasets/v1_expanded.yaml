@@ -1,0 +1,18 @@
+# Evaluation Dataset v1 - Expanded 160 samples
+# Categories: correctness(40), security(40), performance(40), maintainability(40)
+
+name: "v1_expanded"
+version: "2.0.0"
+description: "Expanded evaluation dataset - 160 samples (40 per category: correctness, security, performance, maintainability)"
+
+# This file references samples from separate category files
+# Load via load_dataset_by_name("v1_expanded")
+# The loader will combine samples from v1_samples/*.yaml
+
+_include:
+  - v1_samples/correctness.yaml
+  - v1_samples/security.yaml
+  - v1_samples/performance.yaml
+  - v1_samples/maintainability.yaml
+
+samples: []  # Will be populated by the composite loader

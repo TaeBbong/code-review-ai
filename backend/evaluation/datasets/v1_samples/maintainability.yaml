@@ -1,0 +1,1286 @@
+# Maintainability category samples (40 samples)
+# Focus: Code complexity, naming, duplication, SOLID principles, documentation
+
+samples:
+  # === Naming Issues ===
+  - id: "maintainability-001"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["naming", "variable", "unclear"]
+    input:
+      diff: |
+        diff --git a/calculator.py b/calculator.py
+        --- a/calculator.py
+        +++ b/calculator.py
+        @@ -1,5 +1,5 @@
+        -def calculate_total_price(items, tax_rate):
+        -    subtotal = sum(item.price for item in items)
+        -    tax = subtotal * tax_rate
+        -    return subtotal + tax
+        +def calc(x, y):
+        +    a = sum(i.price for i in x)
+        +    b = a * y
+        +    return a + b
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["naming", "variable", "unclear", "descriptive"]
+          description_pattern: "Poor variable and function names"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-002"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["naming", "boolean", "negation"]
+    input:
+      diff: |
+        diff --git a/validator.py b/validator.py
+        --- a/validator.py
+        +++ b/validator.py
+        @@ -1,5 +1,5 @@
+        -def is_valid_email(email):
+        +def is_not_invalid_email(email):
+             import re
+             pattern = r'^[\w.-]+@[\w.-]+\.\w+$'
+             return re.match(pattern, email) is not None
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["naming", "negation", "boolean", "confusing"]
+          description_pattern: "Double negative in function name"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-003"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["naming", "misleading", "type"]
+    input:
+      diff: |
+        diff --git a/user_service.py b/user_service.py
+        --- a/user_service.py
+        +++ b/user_service.py
+        @@ -1,5 +1,5 @@
+         def get_users():
+        -    return User.query.all()
+        +    user_list = User.query.first()  # Returns single user, not list
+        +    return user_list
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["naming", "misleading", "list", "type"]
+          description_pattern: "Variable name suggests list but holds single item"
+      min_issues: 1
+      max_issues: 2
+
+  # === Code Duplication ===
+  - id: "maintainability-004"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["duplication", "dry", "refactor"]
+    input:
+      diff: |
+        diff --git a/report.py b/report.py
+        --- a/report.py
+        +++ b/report.py
+        @@ -1,10 +1,20 @@
+         def generate_sales_report(data):
+        -    return format_report(data, "Sales Report")
+        -
+        -def generate_inventory_report(data):
+        -    return format_report(data, "Inventory Report")
+        -
+        -def format_report(data, title):
+        -    return {"title": title, "data": data, "generated_at": datetime.now()}
+        +    result = {}
+        +    result["title"] = "Sales Report"
+        +    result["data"] = data
+        +    result["generated_at"] = datetime.now()
+        +    return result
+        +
+        +def generate_inventory_report(data):
+        +    result = {}
+        +    result["title"] = "Inventory Report"
+        +    result["data"] = data
+        +    result["generated_at"] = datetime.now()
+        +    return result
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["duplication", "DRY", "duplicate", "refactor"]
+          description_pattern: "Duplicated code pattern"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-005"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["duplication", "magic-number", "constant"]
+    input:
+      diff: |
+        diff --git a/pricing.py b/pricing.py
+        --- a/pricing.py
+        +++ b/pricing.py
+        @@ -1,9 +1,8 @@
+        -TAX_RATE = 0.08
+        -
+         def calculate_price(amount):
+        -    return amount * (1 + TAX_RATE)
+        +    return amount * 1.08  # Magic number
+
+         def calculate_tax(amount):
+        -    return amount * TAX_RATE
+        +    return amount * 0.08  # Same magic number
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["magic", "number", "constant", "duplication"]
+          description_pattern: "Magic numbers should be constants"
+      min_issues: 1
+      max_issues: 2
+
+  # === Complexity Issues ===
+  - id: "maintainability-006"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["complexity", "nested", "condition"]
+    input:
+      diff: |
+        diff --git a/validator.py b/validator.py
+        --- a/validator.py
+        +++ b/validator.py
+        @@ -1,10 +1,15 @@
+         def validate_order(order):
+        -    if not order.items:
+        -        return False
+        -    if not order.customer:
+        -        return False
+        -    if order.total <= 0:
+        -        return False
+        -    return True
+        +    if order:
+        +        if order.items:
+        +            if len(order.items) > 0:
+        +                if order.customer:
+        +                    if order.customer.id:
+        +                        if order.total:
+        +                            if order.total > 0:
+        +                                return True
+        +                            else:
+        +                                return False
+        +    return False
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["nested", "complexity", "arrow", "anti-pattern"]
+          description_pattern: "Deeply nested conditionals"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-007"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["complexity", "function", "long"]
+    input:
+      diff: |
+        diff --git a/processor.py b/processor.py
+        --- a/processor.py
+        +++ b/processor.py
+        @@ -1,12 +1,25 @@
+        -def process_order(order):
+        -    validated = validate_order(order)
+        -    priced = calculate_pricing(validated)
+        -    return finalize_order(priced)
+        -
+        -def validate_order(order):
+        -    # validation logic
+        -    pass
+        -
+        -def calculate_pricing(order):
+        -    # pricing logic
+        -    pass
+        +def process_order(order):
+        +    # Validation
+        +    if not order.items:
+        +        raise ValueError("No items")
+        +    for item in order.items:
+        +        if item.quantity <= 0:
+        +            raise ValueError("Invalid quantity")
+        +    # Pricing
+        +    subtotal = 0
+        +    for item in order.items:
+        +        subtotal += item.price * item.quantity
+        +    tax = subtotal * 0.08
+        +    total = subtotal + tax
+        +    # Discount
+        +    if order.coupon:
+        +        total = total * (1 - order.coupon.discount)
+        +    # Finalization
+        +    order.subtotal = subtotal
+        +    order.tax = tax
+        +    order.total = total
+        +    order.status = "processed"
+        +    return order
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["function", "long", "responsibility", "split"]
+          description_pattern: "Function does too many things"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-008"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["complexity", "cyclomatic", "branch"]
+    input:
+      diff: |
+        diff --git a/handler.py b/handler.py
+        --- a/handler.py
+        +++ b/handler.py
+        @@ -1,8 +1,20 @@
+        -HANDLERS = {
+        -    "create": handle_create,
+        -    "update": handle_update,
+        -    "delete": handle_delete,
+        -}
+        -
+         def handle_action(action, data):
+        -    return HANDLERS.get(action, handle_unknown)(data)
+        +    if action == "create":
+        +        return handle_create(data)
+        +    elif action == "update":
+        +        return handle_update(data)
+        +    elif action == "delete":
+        +        return handle_delete(data)
+        +    elif action == "read":
+        +        return handle_read(data)
+        +    elif action == "list":
+        +        return handle_list(data)
+        +    elif action == "search":
+        +        return handle_search(data)
+        +    elif action == "export":
+        +        return handle_export(data)
+        +    else:
+        +        return handle_unknown(data)
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["switch", "dispatch", "dictionary", "mapping"]
+          description_pattern: "Long if-elif chain instead of dispatch table"
+      min_issues: 1
+      max_issues: 2
+
+  # === SOLID Principle Violations ===
+  - id: "maintainability-009"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["solid", "srp", "responsibility"]
+    input:
+      diff: |
+        diff --git a/user.py b/user.py
+        --- a/user.py
+        +++ b/user.py
+        @@ -1,12 +1,20 @@
+         class User:
+             def __init__(self, name, email):
+                 self.name = name
+                 self.email = email
+        +
+        +    def save(self):
+        +        db.execute("INSERT INTO users ...", self.name, self.email)
+        +
+        +    def send_email(self, subject, body):
+        +        smtp.send(self.email, subject, body)
+        +
+        +    def generate_report(self):
+        +        return f"User Report: {self.name}"
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["SRP", "responsibility", "class", "cohesion"]
+          description_pattern: "Class has multiple responsibilities"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-010"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["solid", "ocp", "modification"]
+    input:
+      diff: |
+        diff --git a/discount.py b/discount.py
+        --- a/discount.py
+        +++ b/discount.py
+        @@ -1,10 +1,15 @@
+        -class DiscountCalculator:
+        -    def __init__(self, strategies: list[DiscountStrategy]):
+        -        self.strategies = strategies
+        -
+        -    def calculate(self, order):
+        -        return sum(s.apply(order) for s in self.strategies)
+        +class DiscountCalculator:
+        +    def calculate(self, order, discount_type):
+        +        if discount_type == "percentage":
+        +            return order.total * 0.1
+        +        elif discount_type == "fixed":
+        +            return 10
+        +        elif discount_type == "member":
+        +            return order.total * 0.15
+        +        # Need to modify this class to add new discount types
+        +        else:
+        +            return 0
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["OCP", "open-closed", "extend", "modify"]
+          description_pattern: "Violates open-closed principle"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-011"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["solid", "dip", "dependency"]
+    input:
+      diff: |
+        diff --git a/order_service.py b/order_service.py
+        --- a/order_service.py
+        +++ b/order_service.py
+        @@ -1,10 +1,8 @@
+         class OrderService:
+        -    def __init__(self, repository: OrderRepository, notifier: Notifier):
+        -        self.repository = repository
+        -        self.notifier = notifier
+        +    def __init__(self):
+        +        self.repository = MySQLOrderRepository()  # Concrete dependency
+        +        self.notifier = EmailNotifier()  # Concrete dependency
+
+             def create_order(self, order):
+                 self.repository.save(order)
+                 self.notifier.notify(order)
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["DIP", "dependency", "injection", "concrete"]
+          description_pattern: "Depends on concrete implementations"
+      min_issues: 1
+      max_issues: 2
+
+  # === Code Organization ===
+  - id: "maintainability-012"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["organization", "import", "order"]
+    input:
+      diff: |
+        diff --git a/service.py b/service.py
+        --- a/service.py
+        +++ b/service.py
+        @@ -1,8 +1,8 @@
+        -import os
+        -from datetime import datetime
+        -
+        -import requests
+        -
+        -from myapp.models import User
+        +from myapp.models import User
+        +import requests
+        +from datetime import datetime
+        +import os
+        +import json
+        +from myapp.utils import helper
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["import", "order", "organization", "PEP8"]
+          description_pattern: "Import order doesn't follow conventions"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-013"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["organization", "class", "god-object"]
+    input:
+      diff: |
+        diff --git a/manager.py b/manager.py
+        --- a/manager.py
+        +++ b/manager.py
+        @@ -1,15 +1,25 @@
+         class ApplicationManager:
+        -    def __init__(self):
+        -        self.user_service = UserService()
+        -        self.order_service = OrderService()
+        +    def __init__(self):
+        +        self.users = []
+        +        self.orders = []
+        +        self.products = []
+        +        self.config = {}
+        +
+        +    def create_user(self, data): pass
+        +    def delete_user(self, id): pass
+        +    def create_order(self, data): pass
+        +    def cancel_order(self, id): pass
+        +    def add_product(self, data): pass
+        +    def update_inventory(self, id, qty): pass
+        +    def send_notification(self, user, msg): pass
+        +    def generate_report(self, type): pass
+        +    def backup_database(self): pass
+        +    def clear_cache(self): pass
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "high"
+          title_keywords: ["god", "object", "class", "responsibility"]
+          description_pattern: "God object with too many responsibilities"
+      min_issues: 1
+      max_issues: 2
+
+  # === Error Handling ===
+  - id: "maintainability-014"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["error", "exception", "generic"]
+    input:
+      diff: |
+        diff --git a/api.py b/api.py
+        --- a/api.py
+        +++ b/api.py
+        @@ -1,8 +1,6 @@
+        -class UserNotFoundError(Exception):
+        -    pass
+        -
+         def get_user(user_id):
+             user = db.get(user_id)
+             if not user:
+        -        raise UserNotFoundError(f"User {user_id} not found")
+        +        raise Exception("Error")  # Generic exception, no context
+             return user
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["exception", "generic", "specific", "message"]
+          description_pattern: "Generic exception without context"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-015"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["error", "silent", "catch"]
+    input:
+      diff: |
+        diff --git a/processor.py b/processor.py
+        --- a/processor.py
+        +++ b/processor.py
+        @@ -1,8 +1,7 @@
+         def process_item(item):
+             try:
+                 result = transform(item)
+        -        return result
+        -    except TransformError as e:
+        -        logger.error(f"Transform failed for {item}: {e}")
+        -        raise
+        +    except Exception:
+        +        pass  # Silent failure
+        +    return None
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "high"
+          title_keywords: ["silent", "exception", "swallow", "logging"]
+          description_pattern: "Silent exception handling"
+      min_issues: 1
+      max_issues: 2
+
+  # === Coupling Issues ===
+  - id: "maintainability-016"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["coupling", "global", "state"]
+    input:
+      diff: |
+        diff --git a/service.py b/service.py
+        --- a/service.py
+        +++ b/service.py
+        @@ -1,10 +1,10 @@
+        -class OrderService:
+        -    def __init__(self, config):
+        -        self.config = config
+        +# Global configuration
+        +config = {}
+
+        -    def get_tax_rate(self):
+        -        return self.config.get("tax_rate", 0.08)
+        +class OrderService:
+        +    def get_tax_rate(self):
+        +        return config.get("tax_rate", 0.08)  # Depends on global state
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["global", "state", "coupling", "dependency"]
+          description_pattern: "Depends on global mutable state"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-017"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["coupling", "circular", "import"]
+    input:
+      diff: |
+        diff --git a/models/user.py b/models/user.py
+        --- a/models/user.py
+        +++ b/models/user.py
+        @@ -1,5 +1,7 @@
+        +from models.order import Order  # Circular import risk
+        +
+         class User:
+             def __init__(self, name):
+                 self.name = name
+        -        self.orders = []
+        +        self.orders: list[Order] = []
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["circular", "import", "dependency", "coupling"]
+          description_pattern: "Potential circular import"
+      min_issues: 1
+      max_issues: 2
+
+  # === Type Hints and Documentation ===
+  - id: "maintainability-018"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["type", "hint", "any"]
+    input:
+      diff: |
+        diff --git a/api.py b/api.py
+        --- a/api.py
+        +++ b/api.py
+        @@ -1,5 +1,5 @@
+        -def process_data(items: list[Item]) -> ProcessedResult:
+        +def process_data(items: Any) -> Any:
+             results = []
+             for item in items:
+                 results.append(transform(item))
+             return ProcessedResult(results)
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["type", "Any", "hint", "specific"]
+          description_pattern: "Any type removes type safety"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-019"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["documentation", "removed", "docstring"]
+    input:
+      diff: |
+        diff --git a/calculator.py b/calculator.py
+        --- a/calculator.py
+        +++ b/calculator.py
+        @@ -1,12 +1,4 @@
+         def calculate_compound_interest(principal, rate, time, n):
+        -    """
+        -    Calculate compound interest.
+        -
+        -    Args:
+        -        principal: Initial investment amount
+        -        rate: Annual interest rate (as decimal)
+        -        time: Time period in years
+        -        n: Number of times interest compounds per year
+        -
+        -    Returns:
+        -        Final amount after compound interest
+        -    """
+             return principal * (1 + rate/n) ** (n*time)
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["documentation", "docstring", "removed"]
+          description_pattern: "Removed useful documentation"
+      min_issues: 1
+      max_issues: 2
+
+  # === Testability Issues ===
+  - id: "maintainability-020"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["testability", "hardcoded", "dependency"]
+    input:
+      diff: |
+        diff --git a/service.py b/service.py
+        --- a/service.py
+        +++ b/service.py
+        @@ -1,8 +1,7 @@
+         class PaymentService:
+        -    def __init__(self, gateway: PaymentGateway):
+        -        self.gateway = gateway
+        +    def __init__(self):
+        +        self.gateway = StripeGateway()  # Hard to mock in tests
+
+             def process_payment(self, amount):
+                 return self.gateway.charge(amount)
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["testability", "mock", "hardcoded", "dependency"]
+          description_pattern: "Hardcoded dependency hard to test"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-021"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["testability", "datetime", "now"]
+    input:
+      diff: |
+        diff --git a/scheduler.py b/scheduler.py
+        --- a/scheduler.py
+        +++ b/scheduler.py
+        @@ -1,7 +1,6 @@
+         class Scheduler:
+        -    def __init__(self, clock=None):
+        -        self.clock = clock or datetime
+
+             def is_due(self, task):
+        -        return task.due_date <= self.clock.now()
+        +        return task.due_date <= datetime.now()  # Non-deterministic
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["testability", "datetime", "now", "deterministic"]
+          description_pattern: "Non-deterministic datetime makes testing hard"
+      min_issues: 1
+      max_issues: 2
+
+  # === Configuration Issues ===
+  - id: "maintainability-022"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["config", "hardcoded", "value"]
+    input:
+      diff: |
+        diff --git a/api.py b/api.py
+        --- a/api.py
+        +++ b/api.py
+        @@ -1,6 +1,5 @@
+        -API_TIMEOUT = int(os.environ.get("API_TIMEOUT", "30"))
+        -
+         def fetch_data(url):
+        -    return requests.get(url, timeout=API_TIMEOUT)
+        +    return requests.get(url, timeout=30)  # Hardcoded timeout
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["hardcoded", "config", "timeout", "environment"]
+          description_pattern: "Hardcoded configuration value"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-023"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["config", "scattered", "centralize"]
+    input:
+      diff: |
+        diff --git a/services.py b/services.py
+        --- a/services.py
+        +++ b/services.py
+        @@ -1,10 +1,10 @@
+         class UserService:
+             def get_page_size(self):
+        -        return settings.USER_PAGE_SIZE
+        +        return 20  # Should be centralized
+
+         class OrderService:
+             def get_page_size(self):
+        -        return settings.ORDER_PAGE_SIZE
+        +        return 20  # Duplicated magic number
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["config", "centralize", "settings", "scattered"]
+          description_pattern: "Configuration scattered instead of centralized"
+      min_issues: 1
+      max_issues: 2
+
+  # === Boolean Parameter Issues ===
+  - id: "maintainability-024"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["parameter", "boolean", "flag"]
+    input:
+      diff: |
+        diff --git a/formatter.py b/formatter.py
+        --- a/formatter.py
+        +++ b/formatter.py
+        @@ -1,8 +1,8 @@
+        -def format_date(date, include_time=False):
+        -    if include_time:
+        +def format_date(date, flag1=False, flag2=False, flag3=False):
+        +    if flag1:  # Unclear what these flags mean
+                 return date.strftime("%Y-%m-%d %H:%M:%S")
+        -    return date.strftime("%Y-%m-%d")
+        +    if flag2:
+        +        return date.strftime("%Y/%m/%d")
+        +    return date.strftime("%Y-%m-%d")
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["boolean", "flag", "parameter", "unclear"]
+          description_pattern: "Multiple unclear boolean flags"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-025"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["parameter", "count", "many"]
+    input:
+      diff: |
+        diff --git a/user.py b/user.py
+        --- a/user.py
+        +++ b/user.py
+        @@ -1,5 +1,5 @@
+        -def create_user(name, email, **kwargs):
+        -    return User(name=name, email=email, **kwargs)
+        +def create_user(name, email, age, address, phone, country, city, zip_code, department, role):
+        +    return User(name, email, age, address, phone, country, city, zip_code, department, role)
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["parameter", "many", "object", "dataclass"]
+          description_pattern: "Too many parameters"
+      min_issues: 1
+      max_issues: 2
+
+  # === Return Value Issues ===
+  - id: "maintainability-026"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["return", "inconsistent", "type"]
+    input:
+      diff: |
+        diff --git a/finder.py b/finder.py
+        --- a/finder.py
+        +++ b/finder.py
+        @@ -1,6 +1,8 @@
+         def find_user(user_id):
+             user = db.get(user_id)
+        -    return user  # Returns User or None consistently
+        +    if not user:
+        +        return -1  # Returns int
+        +    return user  # Returns User - inconsistent return types
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["return", "type", "inconsistent", "mixed"]
+          description_pattern: "Inconsistent return types"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-027"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["return", "tuple", "unclear"]
+    input:
+      diff: |
+        diff --git a/calculator.py b/calculator.py
+        --- a/calculator.py
+        +++ b/calculator.py
+        @@ -1,6 +1,4 @@
+        -from dataclasses import dataclass
+        -
+        -@dataclass
+        -class PriceBreakdown:
+        -    subtotal: float
+        -    tax: float
+        -    total: float
+        -
+         def calculate_price(items):
+        -    subtotal = sum(i.price for i in items)
+        -    tax = subtotal * 0.08
+        -    return PriceBreakdown(subtotal, tax, subtotal + tax)
+        +    s = sum(i.price for i in items)
+        +    t = s * 0.08
+        +    return s, t, s + t  # Unclear tuple return
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["tuple", "return", "dataclass", "named"]
+          description_pattern: "Unnamed tuple return"
+      min_issues: 1
+      max_issues: 2
+
+  # === Comments Issues ===
+  - id: "maintainability-028"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["comment", "outdated", "misleading"]
+    input:
+      diff: |
+        diff --git a/processor.py b/processor.py
+        --- a/processor.py
+        +++ b/processor.py
+        @@ -1,6 +1,6 @@
+         def process_items(items):
+        -    # Filter invalid items and transform valid ones
+        -    return [transform(i) for i in items if i.is_valid]
+        +    # Filter invalid items and transform valid ones
+        +    return items  # Comment doesn't match code
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["comment", "outdated", "misleading", "code"]
+          description_pattern: "Comment doesn't match code"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-029"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["comment", "obvious", "redundant"]
+    input:
+      diff: |
+        diff --git a/user.py b/user.py
+        --- a/user.py
+        +++ b/user.py
+        @@ -1,4 +1,8 @@
+         def get_user_name(user):
+        +    # Check if user is None
+        +    if user is None:
+        +        # Return None if user is None
+        +        return None
+        +    # Return the user's name
+             return user.name
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["comment", "obvious", "redundant", "noise"]
+          description_pattern: "Comments state the obvious"
+      min_issues: 1
+      max_issues: 2
+
+  # === Abstraction Issues ===
+  - id: "maintainability-030"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["abstraction", "leak", "implementation"]
+    input:
+      diff: |
+        diff --git a/repository.py b/repository.py
+        --- a/repository.py
+        +++ b/repository.py
+        @@ -1,6 +1,6 @@
+         class UserRepository:
+             def get_users(self):
+        -        return self._to_domain_objects(self.db.query("SELECT * FROM users"))
+        +        return self.db.query("SELECT * FROM users")  # Leaks DB cursor
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["abstraction", "leak", "implementation", "coupling"]
+          description_pattern: "Leaks implementation details"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-031"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["abstraction", "premature", "over-engineering"]
+    input:
+      diff: |
+        diff --git a/calculator.py b/calculator.py
+        --- a/calculator.py
+        +++ b/calculator.py
+        @@ -1,4 +1,20 @@
+        -def add(a, b):
+        -    return a + b
+        +class OperationFactory:
+        +    @staticmethod
+        +    def create(op_type):
+        +        if op_type == "add":
+        +            return AddOperation()
+        +
+        +class AddOperation:
+        +    def execute(self, a, b):
+        +        return a + b
+        +
+        +class Calculator:
+        +    def __init__(self, factory):
+        +        self.factory = factory
+        +
+        +    def calculate(self, op_type, a, b):
+        +        op = self.factory.create(op_type)
+        +        return op.execute(a, b)
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["over-engineering", "abstraction", "simple", "complex"]
+          description_pattern: "Over-engineered solution"
+      min_issues: 1
+      max_issues: 2
+
+  # === State Management Issues ===
+  - id: "maintainability-032"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["state", "mutable", "shared"]
+    input:
+      diff: |
+        diff --git a/cache.py b/cache.py
+        --- a/cache.py
+        +++ b/cache.py
+        @@ -1,8 +1,8 @@
+        +_shared_cache = {}  # Module-level mutable state
+        +
+         class DataService:
+        -    def __init__(self):
+        -        self._cache = {}
+        -
+             def get_data(self, key):
+        -        if key not in self._cache:
+        -            self._cache[key] = self._fetch(key)
+        -        return self._cache[key]
+        +        if key not in _shared_cache:
+        +            _shared_cache[key] = self._fetch(key)
+        +        return _shared_cache[key]
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["shared", "state", "mutable", "module"]
+          description_pattern: "Shared mutable module state"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-033"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["state", "side-effect", "pure"]
+    input:
+      diff: |
+        diff --git a/transformer.py b/transformer.py
+        --- a/transformer.py
+        +++ b/transformer.py
+        @@ -1,5 +1,6 @@
+         def transform_items(items):
+        -    return [transform(item) for item in items]
+        +    for item in items:
+        +        item.status = "transformed"  # Modifies input
+        +    return items
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["side-effect", "mutation", "input", "pure"]
+          description_pattern: "Function modifies input argument"
+      min_issues: 1
+      max_issues: 2
+
+  # === Inheritance Issues ===
+  - id: "maintainability-034"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["inheritance", "deep", "hierarchy"]
+    input:
+      diff: |
+        diff --git a/models.py b/models.py
+        --- a/models.py
+        +++ b/models.py
+        @@ -1,6 +1,10 @@
+        -class User(BaseModel):
+        +class Entity(Base):
+        +    pass
+        +
+        +class Timestamped(Entity):
+        +    pass
+        +
+        +class Auditable(Timestamped):
+        +    pass
+        +
+        +class User(Auditable):  # Deep inheritance hierarchy
+             pass
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["inheritance", "deep", "hierarchy", "composition"]
+          description_pattern: "Deep inheritance hierarchy"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-035"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "hard"
+      tags: ["inheritance", "lsp", "violation"]
+    input:
+      diff: |
+        diff --git a/shapes.py b/shapes.py
+        --- a/shapes.py
+        +++ b/shapes.py
+        @@ -5,7 +5,8 @@ class Rectangle:
+             def set_height(self, h):
+                 self.height = h
+
+        -class Square(Rectangle):
+        +class Square(Rectangle):  # LSP violation
+             def set_width(self, w):
+                 self.width = w
+        -        self.height = w
+        +        self.height = w  # Changes height too - unexpected behavior
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["LSP", "Liskov", "substitution", "inheritance"]
+          description_pattern: "Liskov Substitution Principle violation"
+      min_issues: 1
+      max_issues: 2
+
+  # === API Design Issues ===
+  - id: "maintainability-036"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["api", "breaking", "change"]
+    input:
+      diff: |
+        diff --git a/client.py b/client.py
+        --- a/client.py
+        +++ b/client.py
+        @@ -1,5 +1,5 @@
+         class ApiClient:
+        -    def get_user(self, user_id):
+        +    def get_user(self, user_id, include_orders=False, include_settings=False):
+                 # Breaking change: new required-like parameters
+                 pass
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "medium"
+          title_keywords: ["API", "breaking", "parameter", "backward"]
+          description_pattern: "Potential breaking API change"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-037"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "medium"
+      tags: ["api", "consistency", "naming"]
+    input:
+      diff: |
+        diff --git a/service.py b/service.py
+        --- a/service.py
+        +++ b/service.py
+        @@ -1,6 +1,6 @@
+         class UserService:
+             def get_user(self, id): pass
+        -    def get_users(self): pass
+        +    def fetch_all_users(self): pass  # Inconsistent naming
+             def create_user(self, data): pass
+        -    def update_user(self, id, data): pass
+        +    def modify_user(self, id, data): pass  # Inconsistent naming
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["naming", "consistency", "API", "convention"]
+          description_pattern: "Inconsistent API naming"
+      min_issues: 1
+      max_issues: 2
+
+  # === Dead Code Issues ===
+  - id: "maintainability-038"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["dead-code", "unreachable", "return"]
+    input:
+      diff: |
+        diff --git a/checker.py b/checker.py
+        --- a/checker.py
+        +++ b/checker.py
+        @@ -1,4 +1,6 @@
+         def check_status(item):
+             if item.is_active:
+                 return "active"
+        -    return "inactive"
+        +    return "inactive"
+        +    print("Status checked")  # Unreachable code
+        +    log_check(item)  # Unreachable code
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["dead", "unreachable", "code", "return"]
+          description_pattern: "Unreachable code after return"
+      min_issues: 1
+      max_issues: 2
+
+  - id: "maintainability-039"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["dead-code", "unused", "import"]
+    input:
+      diff: |
+        diff --git a/service.py b/service.py
+        --- a/service.py
+        +++ b/service.py
+        @@ -1,4 +1,7 @@
+        +import json
+        +import xml
+        +from datetime import datetime, timedelta, timezone
+        +
+         def get_data():
+        -    return {"status": "ok"}
+        +    return {"status": "ok"}  # None of the imports used
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["unused", "import", "dead", "code"]
+          description_pattern: "Unused imports"
+      min_issues: 1
+      max_issues: 2
+
+  # === Logging Issues ===
+  - id: "maintainability-040"
+    metadata:
+      primary_category: "maintainability"
+      secondary_categories: []
+      difficulty: "easy"
+      tags: ["logging", "print", "debug"]
+    input:
+      diff: |
+        diff --git a/service.py b/service.py
+        --- a/service.py
+        +++ b/service.py
+        @@ -1,6 +1,7 @@
+         def process_order(order):
+        -    logger.info(f"Processing order {order.id}")
+        +    print(f"Processing order {order.id}")  # print instead of logger
+        +    print(f"DEBUG: {order.__dict__}")  # Debug print left in
+             result = do_process(order)
+        -    logger.info(f"Order {order.id} processed")
+        +    print("done")  # Inconsistent with logging
+             return result
+    expected:
+      issues:
+        - category: "maintainability"
+          severity_min: "low"
+          title_keywords: ["print", "logging", "debug", "production"]
+          description_pattern: "Print statements instead of logging"
+      min_issues: 1
+      max_issues: 2

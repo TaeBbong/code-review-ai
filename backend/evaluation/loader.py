@@ -128,9 +128,22 @@ def _parse_eval_sample(data: dict) -> EvalSample:
     )
 
 
+def _load_samples_from_file(path: Path) -> list[EvalSample]:
+    """Load samples from a YAML file (category file format)."""
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+
+    return [_parse_eval_sample(s) for s in data.get("samples", [])]
+
+
 def load_dataset(path: Path | str) -> EvalDataset:
     """
     Load evaluation dataset from YAML file.
+
+    Supports composite datasets with _include directive:
+        _include:
+          - v1_samples/correctness.yaml
+          - v1_samples/security.yaml
 
     Args:
         path: Path to the YAML dataset file
@@ -143,7 +156,18 @@ def load_dataset(path: Path | str) -> EvalDataset:
     with open(path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    samples = [_parse_eval_sample(s) for s in data.get("samples", [])]
+    samples = []
+
+    # Handle _include directive for composite datasets
+    if "_include" in data:
+        base_dir = path.parent
+        for include_path in data["_include"]:
+            include_file = base_dir / include_path
+            if include_file.exists():
+                samples.extend(_load_samples_from_file(include_file))
+
+    # Also add any direct samples in the file
+    samples.extend([_parse_eval_sample(s) for s in data.get("samples", [])])
 
     return EvalDataset(
         name=data.get("name", path.stem),
@@ -186,14 +210,15 @@ def list_available_datasets() -> list[str]:
     """
     List all available dataset names.
 
-    Scans both flat and subdirectory layouts.
+    Scans for top-level dataset files only (excludes files in subdirectories
+    like v1_samples/ which are component files for composite datasets).
 
     Returns:
         List of dataset names
     """
     datasets_dir = Path(__file__).parent / "datasets"
-    # Find all YAML files including in subdirectories
-    return sorted(set(p.stem for p in datasets_dir.glob("**/*.yaml")))
+    # Only find YAML files directly in the datasets directory (not subdirectories)
+    return sorted(set(p.stem for p in datasets_dir.glob("*.yaml")))
 
 
 def filter_samples_by_category(
