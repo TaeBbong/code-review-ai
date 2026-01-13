@@ -97,8 +97,16 @@ def get_prompt_pack(variant_id: str) -> dict[str, str]:
     """
     from backend.domain.prompts.registry import PromptPackRegistry
     from backend.config.settings import settings
+    from backend.pipelines.registry import load_preset
 
     packs_dir = Path(__file__).parent.parent.parent / "domain" / "prompts" / "packs"
+
+    # Check if preset overrides prompt_pack
+    try:
+        preset = load_preset(variant_id)
+        prompt_pack_id = preset.get("prompt_pack") or variant_id
+    except FileNotFoundError:
+        prompt_pack_id = variant_id
 
     registry = PromptPackRegistry(
         packs_dir=packs_dir,
@@ -106,7 +114,7 @@ def get_prompt_pack(variant_id: str) -> dict[str, str]:
         allowed_variants=settings.review_allowed_variants,
     )
 
-    pack = registry.get(variant_id)
+    pack = registry.get(prompt_pack_id)
     return {
         "pack_id": pack.id,
         "review_system": pack.review_system,

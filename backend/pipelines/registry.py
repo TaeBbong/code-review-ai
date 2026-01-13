@@ -84,6 +84,7 @@ def load_preset(variant_id: str) -> Dict[str, Any]:
     return {
         "id": data.get("id", path.stem),
         "pipeline": data.get("pipeline", ""),
+        "prompt_pack": data.get("prompt_pack"),  # optional: override prompt pack
         "params": data.get("params", {}),
     }
 
@@ -98,13 +99,17 @@ def get_pipeline(variant_id: str):
     Returns:
         Pipeline instance ready to run
     """
+    # Load preset to check for prompt_pack override
+    preset = load_preset(variant_id)
+    prompt_pack_id = preset.get("prompt_pack") or variant_id
+
     # Load prompt pack
     prompt_registry = PromptPackRegistry(
         packs_dir=_PACKS_DIR,
         default_variant=settings.review_default_variant,
         allowed_variants=settings.review_allowed_variants,
     )
-    pack = prompt_registry.get(variant_id)
+    pack = prompt_registry.get(prompt_pack_id)
 
     # Load pipeline spec and build
     registry = PipelineRegistry(str(_PRESETS_DIR))

@@ -212,41 +212,105 @@ def _run_evaluation(
 ):
     """Execute evaluation and save results."""
     import asyncio
+    import time
     from backend.evaluation.webapp.utils import (
-        run_evaluation_async,
         generate_run_id,
         create_prompt_snapshot,
         get_variant_preset,
     )
     from backend.evaluation.webapp.storage import RunStore, StoredRun, RunConfig
+    from backend.evaluation.evaluator import Evaluator
+    from backend.evaluation.schemas import SampleScore
+    from backend.pipelines.registry import get_pipeline
+    from backend.domain.schemas.review import ReviewRequest
 
     if not dataset_name or not variant_id:
         st.error("Please select both dataset and variant")
         return
 
     st.session_state.running = True
-    st.session_state.progress = {"completed": 0, "total": 0, "f1": 0.0}
 
-    # Progress placeholder
-    progress_placeholder = st.empty()
+    # Create placeholders for real-time updates
     status_placeholder = st.empty()
-
-    def on_progress(completed: int, total: int, f1: float):
-        st.session_state.progress = {"completed": completed, "total": total, "f1": f1}
+    progress_bar = st.empty()
+    metrics_placeholder = st.empty()
 
     try:
         status_placeholder.info("🚀 Starting evaluation...")
 
+        # Initialize evaluator
+        evaluator = Evaluator(dataset_name=dataset_name)
+        total_samples = len(evaluator.dataset.samples)
+
+        # Progress tracking state
+        completed = 0
+        current_scores: list[SampleScore] = []
+
+        # Update progress display
+        def update_progress_display():
+            nonlocal completed, current_scores
+            if total_samples > 0:
+                pct = completed / total_samples
+                progress_bar.progress(pct, text=f"Evaluating: {completed}/{total_samples} samples")
+
+                # Calculate running F1
+                if current_scores:
+                    total_tp = sum(s.true_positives for s in current_scores)
+                    total_fp = sum(s.false_positives for s in current_scores)
+                    total_fn = sum(s.false_negatives for s in current_scores)
+
+                    precision = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0
+                    recall = total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 0
+                    f1 = (
+                        2 * precision * recall / (precision + recall)
+                        if (precision + recall) > 0
+                        else 0
+                    )
+                else:
+                    precision, recall, f1 = 0.0, 0.0, 0.0
+
+                with metrics_placeholder.container():
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Running Precision", f"{precision:.1%}")
+                    with col2:
+                        st.metric("Running Recall", f"{recall:.1%}")
+                    with col3:
+                        st.metric("Running F1", f"{f1:.1%}")
+
+        # Initial progress display
+        progress_bar.progress(0, text=f"Evaluating: 0/{total_samples} samples")
+
+        # Progress callback
+        def on_sample_complete(sample_id: str, score: SampleScore):
+            nonlocal completed, current_scores
+            completed += 1
+            current_scores.append(score)
+            update_progress_display()
+
+        # Create async review function
+        async def review_fn(diff: str, vid: str):
+            pipeline = get_pipeline(vid)
+            req = ReviewRequest(diff=diff, variant_id=vid)
+            return await pipeline.run(req)
+
         # Run evaluation
-        result, duration = asyncio.run(
-            run_evaluation_async(
-                dataset_name=dataset_name,
+        start_time = time.time()
+
+        result = asyncio.run(
+            evaluator.run(
+                review_fn=review_fn,
                 variant_id=variant_id,
-                param_overrides=overrides,
                 max_concurrency=max_concurrency,
-                on_progress=on_progress,
+                on_sample_complete=on_sample_complete,
             )
         )
+
+        duration = time.time() - start_time
+
+        # Clear progress displays
+        progress_bar.empty()
+        metrics_placeholder.empty()
 
         # Create config snapshot
         preset = get_variant_preset(variant_id)
@@ -289,8 +353,22 @@ def _run_evaluation(
         with col4:
             st.metric("Duration", f"{duration:.1f}s")
 
+        # Show breakdown by category
+        if result.category_scores:
+            st.subheader("Category Breakdown")
+            cat_data = []
+            for cs in sorted(result.category_scores, key=lambda x: x.f1_score, reverse=True):
+                cat_data.append({
+                    "Category": cs.category.value,
+                    "Precision": f"{cs.precision:.1%}",
+                    "Recall": f"{cs.recall:.1%}",
+                    "F1": f"{cs.f1_score:.1%}",
+                    "Count": cs.sample_count,
+                })
+            st.table(cat_data)
+
         # Link to details
-        st.info(f"View details in **History** or **Samples** pages.")
+        st.info("View details in **History** or **Samples** pages.")
 
     except Exception as e:
         status_placeholder.error(f"❌ Evaluation failed: {e}")
