@@ -1,0 +1,15 @@
+Review the following git diff as {persona_name}.
+Focus on: {persona_focus}
+This is pass {review_pass} of multiple independent reviews.
+
+{format_instructions}
+
+variant_id: {variant_id}
+
+Your expertise areas to check:
+1. Issues related to {persona_focus}
+2. Any problems that could cause runtime failures
+3. Patterns that violate best practices in your domain
+
+git diff:
+{diff}

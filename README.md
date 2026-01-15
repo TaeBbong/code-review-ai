@@ -44,7 +44,9 @@ backend/
 │   │       │   └── ...
 │   │       ├── G3-multipersona/
 │   │       │   └── ...
-│   │       └── G4-multireview/
+│   │       ├── G4-multireview/
+│   │       │   └── ...
+│   │       └── G5-multipersona-multireview/
 │   │           └── ...
 │   ├── schemas/
 │   │   ├── review.py            # Pydantic 스키마 (Request/Response)
@@ -67,13 +69,15 @@ backend/
 │   │   ├── g1-mapreduce.yaml
 │   │   ├── g2-iterative.yaml
 │   │   ├── g3-multipersona.yaml
-│   │   └── g4-multireview.yaml
+│   │   ├── g4-multireview.yaml
+│   │   └── g5-multipersona-multireview.yaml
 │   └── variants/                # 파이프라인 구현체
 │       ├── g0_baseline.py       # 단순 diff → LLM
 │       ├── g1_mapreduce.py      # 파일별 분할 + evidence 수집
 │       ├── g2_iterative.py      # 2-pass 오탐 필터링
 │       ├── g3_multipersona.py   # 다중 관점 병렬 리뷰
-│       └── g4_multireview.py    # N회 독립 리뷰 → LLM 집계
+│       ├── g4_multireview.py    # N회 독립 리뷰 → LLM 집계
+│       └── g5_multipersona_multireview.py  # 페르소나별 N회 독립 리뷰 + few-shot
 ├── evaluation/                  # 성능 평가 시스템
 │   ├── schemas.py               # 평가 스키마 (EvalSample, SampleScore 등)
 │   ├── loader.py                # YAML 데이터셋 로더
@@ -460,6 +464,7 @@ Variant는 **프롬프트 팩 + 파이프라인**의 조합입니다.
 | `g2-iterative` | `G2-iterative` | `IterativeRefinementPipeline` | 2-pass 리뷰로 오탐 필터링 |
 | `g3-multipersona` | `G3-multipersona` | `MultiPersonaPipeline` | 다중 관점 병렬 리뷰 |
 | `g4-multireview` | `G4-multireview` | `MultiReviewPipeline` | N회 독립 리뷰 → LLM 집계 (SWR-Bench 논문 기반) |
+| `g5-multipersona-multireview` | `G5-multipersona-multireview` | `MultiPersonaMultiReviewPipeline` | 페르소나별 N회 독립 리뷰 + few-shot 예제 |
 
 #### G1-mapreduce 상세
 
@@ -553,6 +558,45 @@ params:
   aggregation_mode: llm  # "llm" (지능적 집계) 또는 "simple" (단순 합산)
 ```
 
+#### G5-multipersona-multireview 상세
+
+G5-multipersona-multireview는 **G3(Multi-Persona) + G4(Multi-Review)**를 조합하고 **few-shot 예제**를 추가합니다.
+
+**핵심 원리:**
+- **전문화된 리뷰어**: 각 페르소나(correctness, security, performance, maintainability)가 자신의 영역에만 집중
+- **다회 리뷰의 시너지**: 페르소나별로 N회 독립 리뷰로 LLM 무작위성 활용
+- **Few-shot 예제**: 각 카테고리별 2개 예제로 출력 형식 가이드 (특히 7B 모델에서 효과적)
+
+**기본 페르소나 4종:**
+| 페르소나 | 집중 영역 | Few-shot 예제 |
+|---------|----------|---------------|
+| Correctness Reviewer | 버그, 로직 에러, 런타임 이슈 | off-by-one, null check |
+| Security Reviewer | 보안 취약점, injection | SQL injection, hardcoded secrets |
+| Performance Reviewer | N+1 쿼리, O(n²) 알고리즘 | N+1 query, quadratic complexity |
+| Maintainability Reviewer | 복잡도, 네이밍, SOLID | poor naming, deep nesting |
+
+**동작 방식:**
+1. 각 페르소나가 `num_reviews_per_persona`회 독립 리뷰 수행 (기본 2회 × 4 페르소나 = 8회)
+2. 각 리뷰에 few-shot 예제가 포함된 전문 프롬프트 사용
+3. LLM 기반 집계로 중복 제거 및 신뢰도 평가
+
+**출력 특징:**
+- 이슈 제목에 페르소나 태그: `[Correctness Reviewer] Missing null check`
+- summary.key_points에 집계 정보: `Aggregated from 4 personas × 2 reviews (16 raw issues → 8 final)`
+
+```yaml
+# g5-multipersona-multireview.yaml 설정 예시
+params:
+  personas:                       # 사용할 페르소나 목록
+    - correctness
+    - security
+    - performance
+    - maintainability
+  num_reviews_per_persona: 2      # 페르소나당 독립 리뷰 횟수 (총 4×2=8회)
+  max_concurrency: 4              # 병렬 LLM 호출 수
+  aggregation_mode: llm           # "llm" 또는 "simple"
+```
+
 #### Evidence 시스템
 
 Evidence 시스템은 diff에 대한 **추가 컨텍스트**를 수집하여 LLM에게 제공합니다. 이를 통해 더 정확한 리뷰가 가능합니다.
@@ -614,7 +658,7 @@ async def build_evidence(self, *, req, diff) -> Dict[str, Any]:
 운영 환경에서 특정 variant만 허용하려면:
 
 ```bash
-REVIEW_ALLOWED_VARIANTS_RAW="g0-baseline,g1-mapreduce,g2-iterative,g3-multipersona,g4-multireview"
+REVIEW_ALLOWED_VARIANTS_RAW="g0-baseline,g1-mapreduce,g2-iterative,g3-multipersona,g4-multireview,g5-multipersona-multireview"
 ```
 
 허용되지 않은 variant 요청 시 기본 variant로 폴백됩니다.
@@ -874,7 +918,7 @@ uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce --conc
 
 # 여러 variant 비교
 uv run python -m backend.evaluation.cli compare v1_initial \
-    g0-baseline g1-mapreduce g2-iterative g3-multipersona g4-multireview
+    g0-baseline g1-mapreduce g2-iterative g3-multipersona g4-multireview g5-multipersona-multireview
 
 # 결과를 JSON으로 저장
 uv run python -m backend.evaluation.cli run-local v1_initial g1-mapreduce -o result.json
