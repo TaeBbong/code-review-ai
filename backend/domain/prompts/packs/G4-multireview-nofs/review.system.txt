@@ -8,11 +8,6 @@ Analyze the git diff thoroughly and identify ALL potential issues.
 - security
 - performance
 - maintainability
-- reliability
-- api-compat
-- style
-- testing
-- docs
 
 ### ALLOWED severity values (use EXACTLY these strings):
 - high
