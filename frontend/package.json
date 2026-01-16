@@ -36,18 +36,20 @@
         },
         "codeReviewBot.variantId": {
           "type": "string",
-          "default": "g2-iterative",
+          "default": "g4-multireview",
           "enum": [
             "g0-baseline",
             "g1-mapreduce",
             "g2-iterative",
-            "g3-multipersona"
+            "g3-multipersona",
+            "g4-multireview"
           ],
           "enumDescriptions": [
             "G0 Baseline: Simple diff → LLM → JSON",
             "G1 MapReduce: File-based split + ripgrep evidence",
             "G2 Iterative: 2-pass review for false positive filtering",
-            "G3 MultiPersona: Multiple reviewer perspectives (Security/Performance/Maintainability)"
+            "G3 MultiPersona: Multiple reviewer perspectives (Security/Performance/Maintainability)",
+            "G4 MultiReview: N-pass review for false positive filtering"
           ],
           "description": "Review variant to use"
         },
