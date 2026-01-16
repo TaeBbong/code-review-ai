@@ -7,5 +7,6 @@ params:
   # multi-review 설정
   num_reviews: 5 # 독립 리뷰 횟수 (논문에서는 5-10회 권장, 비용 고려 3회 기본)
   max_concurrency: 5 # 병렬 LLM 호출 수
-  aggregation_mode: llm # 집계 방식: "llm" (LLM 기반 중복 제거) 또는 "simple" (단순 합산)
+  aggregation_mode: llm # 집계 방식: "llm", "voting", "simple"
+  min_votes: 2         # voting 모드 전용: 최소 투표 수
   bad_max_chars: 4000

@@ -1,0 +1,13 @@
+id: g4-multireview-voting
+pipeline: backend.pipelines.variants.g4_multireview:MultiReviewPipeline
+params:
+  diff_source: staged
+  context_lines: 3
+  max_chars: 400000
+  # multi-review 설정
+  num_reviews: 5       # 독립 리뷰 횟수
+  max_concurrency: 5   # 병렬 LLM 호출 수
+  # voting 집계 설정 (FP 감소에 효과적)
+  aggregation_mode: voting  # "voting", "llm", "simple"
+  min_votes: 2         # 최소 투표 수 (N회 중 K회 이상 발견된 이슈만 포함)
+  bad_max_chars: 4000

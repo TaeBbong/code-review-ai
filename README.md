@@ -537,25 +537,47 @@ G4-multireview는 **SWR-Bench 논문**의 Multi-Review Aggregation 전략을 구
 **핵심 원리:**
 - LLM은 동일 프롬프트로도 실행마다 다른 이슈를 탐지 (무작위성)
 - 여러 번 독립적으로 리뷰 → 더 많은 실제 결함 발견 (Recall ↑)
-- LLM 기반 집계로 중복 제거 및 신뢰도 평가 (Precision 유지)
+- 집계 단계에서 중복 제거 및 신뢰도 평가 (Precision 유지)
 - 논문에서 F1 점수 43.67% 향상, Recall 118.83% 향상 입증
 
 **동작 방식:**
 1. **N회 독립 리뷰**: 동일 diff에 대해 `num_reviews`회 병렬 리뷰 수행
-2. **LLM 기반 집계**: 여러 리뷰 결과를 분석하여 중복 제거
-   - 반복 발견된 이슈 → 높은 신뢰도 부여
-   - 한 번만 발견된 이슈도 유효하면 포함
+2. **결과 집계**: 여러 리뷰 결과를 분석하여 중복 제거
 3. **최종 결과 생성**: 집계된 이슈 목록 반환
 
+**Aggregation Modes:**
+
+| 모드 | 설명 | 용도 |
+|------|------|------|
+| `llm` | LLM 기반 semantic 중복 제거 | 정확도 우선 (비용 높음) |
+| `voting` | N회 중 K회 이상 발견된 이슈만 포함 | **FP 감소에 효과적** (비용 없음) |
+| `simple` | 단순 합산 (fallback) | 디버깅용 |
+
+**Voting 모드 상세:**
+- 여러 번 발견된 이슈는 신뢰도 높음 → `min_votes` 미만 이슈 제거
+- 이슈 유사도 판단: 카테고리 + 파일 + 라인범위(10단위 버킷)
+- 출력 형태: `[3/5 votes] Null check missing`
+- 7B 모델에서 False Positive 감소에 특히 효과적
+
 **출력 특징:**
-- summary.key_points에 집계 정보: `Aggregated from N independent reviews (M raw issues → K final)`
+- LLM 모드: `Aggregated from N independent reviews (M raw issues → K final)`
+- Voting 모드: `Filtered M raw issues → K (kept issues with N+ votes)`
 
 ```yaml
 # g4-multireview.yaml 설정 예시
 params:
-  num_reviews: 5         # 독립 리뷰 횟수 (논문: 5-10회 권장)
-  max_concurrency: 5     # 병렬 LLM 호출 수
-  aggregation_mode: llm  # "llm" (지능적 집계) 또는 "simple" (단순 합산)
+  num_reviews: 5           # 독립 리뷰 횟수 (논문: 5-10회 권장)
+  max_concurrency: 5       # 병렬 LLM 호출 수
+  aggregation_mode: llm    # "llm", "voting", "simple"
+  min_votes: 2             # voting 모드: 최소 투표 수
+```
+
+```yaml
+# g4-multireview-voting.yaml (FP 감소 최적화)
+params:
+  num_reviews: 5
+  aggregation_mode: voting
+  min_votes: 2  # 5회 중 2회 이상 발견된 이슈만 포함
 ```
 
 #### G5-multipersona-multireview 상세

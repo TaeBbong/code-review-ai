@@ -10,12 +10,17 @@ G4-MultiReview Pipeline
 - LLM의 리뷰 결과는 실행마다 다른 이슈를 탐지 (무작위성)
 - 여러 번 실행 후 집계하면 더 많은 실제 결함 탐지 (Recall ↑)
 - 집계 과정에서 반복 확인된 이슈는 신뢰도 높음 (Precision ↑)
+
+Aggregation Modes:
+- llm: LLM 기반 semantic 중복 제거 (비용 높음, 정확도 높음)
+- voting: 투표 기반 필터링 (비용 없음, FP 감소에 효과적)
+- simple: 단순 합산 (fallback)
 """
 
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List
+from typing import List
 
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -131,7 +136,14 @@ class MultiReviewPipeline(ReviewPipeline):
         # 4) 결과 집계 (Aggregation)
         aggregation_mode = self.params.get("aggregation_mode", "llm")
 
-        if aggregation_mode == "llm" and len(review_results) > 1:
+        if aggregation_mode == "voting" and len(review_results) > 1:
+            # 투표 기반 집계: min_votes 이상 발견된 이슈만 포함
+            min_votes = int(self.params.get("min_votes", 2))
+            aggregated = self._aggregate_voting(
+                review_results=review_results,
+                min_votes=min_votes,
+            )
+        elif aggregation_mode == "llm" and len(review_results) > 1:
             # LLM 기반 집계: 중복 제거 + 신뢰도 평가
             aggregated = await self._aggregate_with_llm(
                 review_results=review_results,
@@ -317,6 +329,121 @@ Instructions:
             issue.id = f"ISS-{i:03d}"
 
         return aggregated
+
+    def _aggregate_voting(
+        self,
+        review_results: List[ReviewResult],
+        min_votes: int = 2,
+    ) -> ReviewResult:
+        """
+        투표 기반 집계: min_votes 이상 발견된 이슈만 포함.
+
+        이슈 유사도 판단 기준:
+        - 같은 파일 + 같은 라인 범위 (±3) + 같은 카테고리 → 동일 이슈로 간주
+        - 파일/라인 정보 없으면 카테고리 + 제목 키워드 유사도로 판단
+
+        Args:
+            review_results: N회 독립 리뷰 결과
+            min_votes: 최소 투표 수 (이 이상 발견된 이슈만 포함)
+        """
+        if not review_results:
+            return ReviewResult()
+
+        # 1) 모든 이슈 수집 + 투표 카운트
+        issue_votes: dict[str, list[Issue]] = {}  # signature -> [issues]
+
+        for result in review_results:
+            for issue in result.issues:
+                sig = self._get_issue_signature(issue)
+                if sig not in issue_votes:
+                    issue_votes[sig] = []
+                issue_votes[sig].append(issue)
+
+        # 2) min_votes 이상인 이슈만 필터링
+        filtered_issues: List[Issue] = []
+        for sig, issues in issue_votes.items():
+            vote_count = len(issues)
+            if vote_count >= min_votes:
+                # 대표 이슈 선택 (첫 번째) + 투표 정보 추가
+                representative = issues[0].model_copy(deep=True)
+                representative.title = f"[{vote_count}/{len(review_results)} votes] {representative.title or ''}"
+                filtered_issues.append(representative)
+
+        # 3) severity 기준 정렬 (high → medium → low)
+        severity_order = {"high": 0, "medium": 1, "low": 2}
+        filtered_issues.sort(
+            key=lambda x: severity_order.get(x.severity.value if x.severity else "low", 2)
+        )
+
+        # 4) 이슈 ID 재할당
+        for i, issue in enumerate(filtered_issues, 1):
+            issue.id = f"ISS-{i:03d}"
+
+        # 5) overall_risk 계산
+        risk_priority = {RiskLevel.high: 3, RiskLevel.medium: 2, RiskLevel.low: 1}
+        max_risk = RiskLevel.low
+        for result in review_results:
+            if risk_priority.get(result.summary.overall_risk, 0) > risk_priority.get(max_risk, 0):
+                max_risk = result.summary.overall_risk
+
+        # 6) 기타 정보 수집
+        all_test_suggestions: List[TestSuggestion] = []
+        all_questions: List[Question] = []
+        all_blockers: List[str] = []
+        all_patches: List[PatchSuggestion] = []
+
+        for result in review_results:
+            all_test_suggestions.extend(result.test_suggestions)
+            all_questions.extend(result.questions_to_author)
+            all_blockers.extend(result.merge_blockers)
+            all_patches.extend(result.patch_suggestions)
+
+        total_before = sum(len(r.issues) for r in review_results)
+
+        return ReviewResult(
+            meta=Meta(),
+            summary=Summary(
+                intent=f"Voting aggregation (min_votes={min_votes})",
+                overall_risk=max_risk,
+                key_points=[
+                    f"Filtered {total_before} raw issues → {len(filtered_issues)} "
+                    f"(kept issues with {min_votes}+ votes)"
+                ],
+            ),
+            issues=filtered_issues,
+            test_suggestions=all_test_suggestions[:5],
+            questions_to_author=all_questions[:3],
+            merge_blockers=list(set(all_blockers)),
+            patch_suggestions=all_patches[:5],
+        )
+
+    def _get_issue_signature(self, issue: Issue) -> str:
+        """
+        이슈의 고유 시그니처 생성 (유사 이슈 그룹핑용).
+
+        시그니처 = 카테고리 + 파일 + 라인범위(10단위 버킷)
+        """
+        category = issue.category.value if issue.category else "unknown"
+
+        # 위치 정보 추출
+        file_path = ""
+        line_bucket = 0
+        if issue.locations:
+            loc = issue.locations[0]
+            file_path = loc.file or ""
+            # 라인 번호를 10단위 버킷으로 그룹핑 (예: 15 → 10, 27 → 20)
+            line_bucket = (loc.line_start or 0) // 10 * 10
+
+        # 파일/라인 정보 없으면 제목 키워드 사용
+        if not file_path:
+            # 제목에서 주요 키워드 추출 (소문자, 정렬)
+            title_words = sorted(
+                word.lower() for word in (issue.title or "").split()
+                if len(word) > 3
+            )[:3]
+            return f"{category}::{':'.join(title_words)}"
+
+        return f"{category}::{file_path}::{line_bucket}"
 
     def _aggregate_simple(self, review_results: List[ReviewResult]) -> ReviewResult:
         """
